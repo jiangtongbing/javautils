@@ -103,7 +103,7 @@ public class ArrayCode {
     	 }
     	 //选择排序。让当前值每次都和它的下一位比较，直到排序完成。
     	 //依旧从大到排序。
-    	 for (int i = 0; i < arr5.length; i++) {
+    	 for (int i = 0; i < arr5.length-1; i++) {
 			for (int j = i; j < arr5.length-1; j++) {
 				  if(arr5[j]<arr5[j+1]){
 					     int tmp1=arr5[j+1];
