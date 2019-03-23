@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>画图</title>
+</head>
+<body>
+<div>
+<label for="scale">放大</label><input type="checkbox" id="scale" onchange="getScale()"> 
+</div>
+
+<canvas id="canvas" style="border:1px solid #ccc" width="1000" height="400">
+
+</canvas>
+<script type="text/javascript">
+function getScale(){
+	   ctx.clearRect(0,0,canvas.width,canvas.height);
+	   if(scale.checked){
+		   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+	   }else{
+	       ctx.drawImage(image,0,0);
+	   }
+}
+   var canvas=document.getElementById("canvas"),
+   ctx=canvas.getContext("2d");
+   var image=new Image();
+   image.src="image/3.jpg";
+   image.onload=function (e){
+	   var scale=document.getElementById("scale");
+	   if(scale.checked){
+		   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+	   }else{
+	       ctx.drawImage(image,0,0);
+	   }
+   }
+</script>
+</body>
+</html>

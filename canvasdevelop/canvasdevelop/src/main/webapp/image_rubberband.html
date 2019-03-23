@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>操控像素</title>
+<style type="text/css">
+ #canvas{
+    border:1px solid #ff0000;
+ }
+ 
+</style>
+</head>
+<body>     
+<div>
+   <button id="resetButton">resetButton</button>
+</div>
+   <canvas id="canvas" width="1000" height="500"> </canvas>
+</body> 
+<script type="text/javascript">
+var canvas=document.getElementById("canvas"),
+ctx=canvas.getContext('2d'),
+offscreencanvas=document.createElement("canvas"),
+offscreenctx=offscreencanvas.getContext("2d"),
+resetButton=document.getElementById('resetButton'),
+image=new Image(),
+imageData,
+rubberImageData,
+mousedown={},
+rubberbandRectangle={},
+dragging=false;
+
+//functions 
+
+    //保存橡皮筋图像数据
+    function  saveRubberImageData(ctx){
+	     rubberImageData=ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
+    }
+    //恢复橡皮筋图像数据
+    function  restoreRubberImageData(ctx){
+    	 ctx.putImageData(rubberImageData,0,0);
+    
+    }
+
+    //坐标转换。
+   function windowToCanvas(canvas,x,y){
+	   var canvasRectangle=canvas.getBoundingClientRect();
+	   return {
+		   x:x-canvasRectangle.left,
+	       y:y-canvasRectangle.top
+	   };
+   }	
+   //capture 捕捉
+   function captureRubberbandPixels(){
+	    imageData=ctx.getImageData(rubberbandRectangle.left,
+	    		rubberbandRectangle.top,
+	    		rubberbandRectangle.width,
+	    		rubberbandRectangle.height);
+   }
+   //restore 恢复
+   function restoreRubberbandPixels(){
+	    ctx.putImageData(imageData,rubberbandRectangle.left,
+	    		rubberbandRectangle.top);
+   }
+   //画皮筋
+   function drawRubberband(){	
+	   ctx.strokeRect(rubberbandRectangle.left+ctx.lineWidth,
+			   rubberbandRectangle.top+ctx.lineWidth,
+			   rubberbandRectangle.width-2*ctx.lineWidth,
+			   rubberbandRectangle.height-2*ctx.lineWidth);
+	   
+   }
+   //设置皮筋
+   function setRubberbandRectangle(x,y){
+	   rubberbandRectangle.left=Math.min(x,mousedown.x);
+       rubberbandRectangle.top=Math.min(y,mousedown.y);
+       rubberbandRectangle.width=Math.abs(x-mousedown.x);
+       rubberbandRectangle.height=Math.abs(y-mousedown.y);
+   }
+   //更新皮筋
+   function updateRubberband(){
+	   captureRubberbandPixels();
+	   drawRubberband();
+   }
+   function rubberbandStart(x,y){
+	   mousedown.x=x;
+	   mousedown.y=y;
+	   rubberbandRectangle.left=mousedown.x;
+	   rubberbandRectangle.top=mousedown.y;
+	   dragging=true;
+   }
+   function rubberbandOutline(x,y){
+	  // var img=new Image();
+	   
+	   offscreenctx.clearRect(0,0,canvas.width,canvas.height);
+	   offscreenctx.strokeStyle='rgba(255,0,0,1)';
+	   offscreenctx.lineWidth=0.5;
+	   offscreenctx.beginPath();
+	   offscreenctx.rect(mousedown.x,mousedown.y,Math.abs(x-mousedown.x),Math.abs(y-mousedown.y));
+	   offscreenctx.stroke();
+	   //现在离屏的画板画好，然后在放到主屏幕上
+	  //img.src=offscreencanvas.toDataURL("image/png");
+	  //ctx.drawImage(offscreencanvas,0,0,canvas.width,canvas.height); 	
+   }
+   
+   function rubberbandStretch(x,y){
+	   if(rubberbandRectangle.width>2*ctx.lineWidth
+			   &&rubberbandRectangle.height>2*ctx.lineWidth){
+		   if(imageData!==undefined){
+			   restoreRubberbandPixels();
+		   }
+	   }
+	   setRubberbandRectangle(x,y);
+	   if(rubberbandRectangle.width>2*ctx.lineWidth
+			   &&rubberbandRectangle.height>2*ctx.lineWidth){
+		   console.log("capture");
+		   updateRubberband();
+	   }
+   }
+   function rubberbandEnd(){
+	    ctx.drawImage(canvas,
+	    		rubberbandRectangle.left+ctx.lineWidth*2,
+	    		rubberbandRectangle.top+ctx.lineWidth*2,
+	    		rubberbandRectangle.width-4*ctx.lineWidth,
+	    		rubberbandRectangle.height-4*ctx.lineWidth,
+	    		0,0,canvas.width,canvas.height);
+	    dragging=false;
+	    imageData=undefined;
+   }
+   //event handlers
+   
+   canvas.onmousedown=function (e){
+	   var loc=windowToCanvas(canvas,e.clientX,e.clientY);
+	   e.preventDefault();
+	   rubberbandStart(loc.x,loc.y);
+   }
+   canvas.onmousemove=function (e){
+	   var loc;	
+	   if(dragging){
+		   loc=windowToCanvas(canvas,e.clientX,e.clientY);
+		   rubberbandStretch(loc.x,loc.y);
+		   rubberbandOutline(loc.x,loc.y)
+	   }
+   }
+   canvas.onmouseup=function (e){
+	   rubberbandEnd();
+   }
+   //initialization
+   image.src="image/3.jpg";
+   image.onload=function (){
+	   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   }
+   resetButton.onclick=function (e){
+	   ctx.clearRect(0,0,canvas.width,canvas.height);
+	   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   }
+   ctx.strokeStyle="navy";
+   ctx.lineWidth=1.0;
+   offscreencanvas.width=canvas.width;
+   offscreencanvas.height=canvas.height;
+
+</script>
+</html>

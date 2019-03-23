@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<title>剪纸效果</title>
+<!-- 非零环绕原则 -->
+<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+canvas {
+	border: 1px solid #ccc;
+	position: absolute;
+}
+
+#settings {
+	height: 200px;
+	width: 100%;
+	color: #ffffff;
+	position: absolute; left : 0;
+	top: 0;
+	left: 0;
+}
+
+.nbox {
+	width: 100%;
+	height: 100%;
+	display: none; background-color : #a28e63;
+	padding: 10px 10px 10px 10px;
+	background-color: #a28e63;
+}
+
+.step {
+	margin-top: 10px;
+}
+
+#apply {
+	cursor: pointer;
+	border-bottom: 1px solid #ffffff;
+}
+</style>
+</head>
+<body>
+	<canvas id="myCanvas" width="1000" height="1000">
+           您的浏览器不支持canvas  
+    </canvas>
+	<!-- 设置面板 -->
+	<script type="text/javascript">
+	   function rect(x,y,w,h,direction){
+		     //创建有方向的矩形。
+		    if(direction){  //ccw 逆时针。
+		     ctx.moveTo(x,y);
+		     ctx.lineTo(x,y+h);
+		     ctx.lineTo(x+w,y+h);
+		     ctx.lineTo(x+w,y);
+		    }else{  //cw
+		    	ctx.moveTo(x,y);
+		        ctx.lineTo(x+w,y);
+		        ctx.lineTo(x+w,y+h);
+		        ctx.lineTo(x,y+h);
+		    }
+		    ctx.closePath();//闭合路径。
+	   }   
+	
+	   function invaliate(ctx){
+		  ctx.clearRect(0,0,ctx.width,ctx.height);
+	   }
+	
+	   window.onload=function (){
+		      var canvas=document.getElementById("myCanvas");
+		      var ctx=canvas.getContext('2d');
+		      ctx.beginPath();
+		      ctx.arc(300,150,150,0,Math.PI*2,false);//顺时针
+		      ctx.arc(300,150,100,0,Math.PI*2,true);//逆时针
+		      ctx.fill();
+		      ctx.shadowColor=undefined;
+		      ctx.shadowOffsetX=0;
+		      ctx.shadowOffsetY=0;
+		     
+		      ctx.stroke();	 
+		      
+		      ctx.beginPath();
+		  
+		      rect(320,320,40,40,true);
+		      ctx.rect(300,300,100,100);  //     
+		      
+		      ctx.fill();
+		      ctx.shadowColor='rgba(200,200,0,0.5)';
+		      ctx.shadowOffsetX=12;
+		      ctx.shadowOffsetY=12;
+		      ctx.shadowBlur=5;
+		      ctx.stroke();
+	   }
+	</script>
+</body>
+</html>

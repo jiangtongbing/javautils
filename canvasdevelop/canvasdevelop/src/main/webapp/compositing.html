@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>图像合成(compositing)</title>
+<style type="text/css">
+#canvas{
+   border:1px solid #ccc;
+}
+</style>
+</head>
+<body>
+	<div id="toolbar">
+		<select id="strokestyleselect">
+			<option value="black">black</option>
+			<option value="white">white</option>
+			<option value="red">red</option>
+			<option value="blue">blue</option>
+			<option value="pink">pink</option>
+			<option value="orange">orange</option>
+		</select> <select id="fillstyleselect">
+			<option value="black">black</option>
+			<option value="white">white</option>
+			<option value="red">red</option>
+			<option value="blue">blue</option>
+			<option value="pink">pink</option>
+			<option value="orange">orange</option>
+		</select> <input type="radio" name="ex" id="drawradio" value="drawradio" checked>drawradio
+		<input type="radio" name="ex" id="eraserradio" value="eraserradio">eraserradio
+		<select id="erasershapeselect">
+			<option value="circle">circle</option>
+			<option value="rect">rect</option>
+		</select> 
+		<select id="eraserwidthselect">
+			<option value="10">10</option>
+			<option value="15">15</option>
+			<option value="20">20</option>
+			<option value="10">25</option>
+			<option value="15">30</option>
+			<option value="20">35</option>
+		</select>
+	</div>
+	<canvas id="canvas" width="1000" height="500"></canvas>
+	<script type="text/javascript">
+		function getId(id) {
+			return document.getElementById(id);
+		}
+		var canvas = getId("canvas"), ctx = canvas.getContext("2d"), strokestyleselect = getId("strokestyleselect"), fillstyleselect = getId("fillstyleselect"), drawradio = getId("drawradio"), eraserradio = getId("eraserradio"), erasershapeselect = getId("erasershapeselect"), eraserwidthselect = getId("eraserwidthselect"), eraser_line_width = 1, eraser_shadow_color = 'rgb(0,0,0)', eraser_shadow_style = 'blue', eraser_stroke_style = 'rgb(0,0,255)', eraser_shadow_offset = -5, eraser_shadow_blur = 20, grid_horizontal_spacing = 10, grid_vertical_spacing = 10, grid_line_color = 'lightblue', drawingsurfaceimagedata, lastx, lasty, mousedown = {}, rubberbandselect = {}, dragging = false, guidewires = true, rubberbandRect = {};
+		//functions
+		function drawGrid(color, stepx, stepy) {
+			//栅格。
+	
+			ctx.save();
+			ctx.shadowColor = undefined;
+			ctx.shadowOffsetX = 0;
+			ctx.shadowOffsetY = 0;
+			ctx.strokeStyle = color;
+			ctx.fillStyle = '#ffffff';
+			ctx.lineWidth = 0.5;
+			ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+			for (var i = stepx + 0.5; i < ctx.canvas.width; i += stepx) {
+				ctx.beginPath();
+				ctx.moveTo(i, 0);
+				ctx.lineTo(i, ctx.canvas.height);
+				ctx.stroke();
+			}
+			for (var i = stepy + 0.5; i < ctx.canvas.height; i += stepy) {
+				ctx.beginPath();
+				ctx.moveTo(0, i);
+				ctx.lineTo(ctx.canvas.width, i);
+				ctx.stroke();
+			}
+			ctx.restore();
+		}
+		//坐标转换。
+		function windowToCanvas(x, y) {
+			var bbox = canvas.getBoundingClientRect();
+			console.log("canvas.width/bbox.width="+canvas.width/bbox.width);
+			return {
+				x : x - bbox.left * (canvas.width / bbox.width),
+				y : y - bbox.top * (canvas.height / bbox.height)
+			};
+		}
+		//save and restore drawing surface
+		//保存之前绘画的内容
+		function saveDrawingSurface() {
+			drawingsurfaceimagedata = ctx.getImageData(0, 0, canvas.width,
+					canvas.height);
+		}
+		//恢复之前绘制的内容
+		function restoreDrawingSurface() {
+			ctx.putImageData(drawingsurfaceimagedata, 0, 0);
+		}
+		//rubberbands 橡皮筋更新
+		function updateRubberbandRectangle(loc) {
+			rubberbandRect.width = Math.abs(loc.x - mousedown.x);
+			rubberbandRect.height = Math.abs(loc.y - mousedown.y);
+			//当前的坐标点比之前的坐标点数值大，则覆盖。
+			if (loc.x > mousedown.x)
+				rubberbandRect.left = mousedown.x;
+			else
+				rubberbandRect.left = loc.x;
+			if (loc.y > mousedown.y)
+				rubberbandRect.top = mousedown.y;
+			else
+				rubberbandRect.top = loc.y;
+		}
+		//画形状、
+		function drawRubberbandShape(loc) {
+			var angle = Math.atan(rubberbandRect.height / rubberbandRect.width), 
+			radius = rubberbandRect.height
+					/ Math.sin(angle);
+			if (mousedown.y === loc.y) {
+				radius = Math.abs(loc.x - mousedown.x);
+			}
+			ctx.beginPath();
+			ctx.arc(mousedown.x, mousedown.y, radius, 0, Math.PI * 2, false);
+			ctx.stroke();
+			ctx.fill();
+		}
+		function updateRubberband(loc) {
+			updateRubberbandRectangle(loc);
+			drawRubberbandShape(loc);
+		}
+		//guidewires
+		function drawHorizontalLine(y) {
+			ctx.beginPath();
+			ctx.moveTo(0, y + 0.5);
+			ctx.lineTo(ctx.canvas.width, y + 0.5);
+			ctx.stroke();
+		}
+		function drawVerticalLine(x) {
+			ctx.beginPath();
+			ctx.moveTo(x + 0.5, 0);
+			ctx.lineTo(x + 0.5, ctx.canvas.height);
+			ctx.stroke();
+		}
+		function drawGuidewires(x, y) {
+			ctx.save();
+			ctx.strokeStyle = 'rgba(0,0,230,0.4)';
+			ctx.lineWidth = 0.5;
+			drawVerticalLine(x);
+			drawHorizontalLine(y);
+			ctx.restore();
+		}
+		//eraser
+		function setDrawPathForEraser(loc){
+			var eraserWidth=parseFloat(eraserwidthselect.value);
+			ctx.beginPath();
+			if(erasershapeselect.value==='circle'){
+				ctx.arc(loc.x,loc.y,eraserWidth/2,0,Math.PI*2,false);
+			}else{
+				ctx.rect(loc.x-eraserWidth/2,loc.y-eraserWidth/2,eraserWidth,eraserWidth);
+			}
+			ctx.clip();
+		}
+		function setEraserPathForEraser(){
+			var eraserWidth=parseFloat(eraserwidthselect.value);
+			ctx.beginPath();
+			if(erasershapeselect.value==='circle'){
+				ctx.arc(lastx,lasty,eraserWidth/2+eraser_line_width,0,Math.PI*2,false);
+			}else{
+				ctx.rect(lastx-eraserWidth/2-eraser_line_width,lasty-eraserWidth/2-eraser_line_width,
+						eraserWidth+eraser_line_width*2,eraserWidth+eraser_line_width*2);
+			}
+			ctx.clip();
+		}
+		function setEraserAttributes(){
+			ctx.lineWidth=eraser_line_width;
+			ctx.shadowColor=eraser_shadow_style;
+			ctx.shadowOffsetX=eraser_shadow_offset;
+			ctx.shadowOffsetY=eraser_shadow_offset;
+			ctx.shadowBlur=eraser_shadow_blur;
+			ctx.strokeStyle=eraser_stroke_style;		
+		}
+		function eraserLast(){
+			ctx.save();
+			setEraserPathForEraser();
+			drawGrid(grid_line_color,grid_horizontal_spacing,grid_vertical_spacing);
+			ctx.restore();
+		}
+		function drawEraser(loc){
+			ctx.save();
+			setEraserAttributes();
+			setDrawPathForEraser(loc);
+			ctx.stroke();
+			ctx.restore();
+		}
+	   //canvas event  handlers
+	   canvas.onmousedown=function(e){
+		   var loc=windowToCanvas(e.clientX,e.clientY);
+		   e.preventDefault();
+		   if(drawradio.checked){
+			   saveDrawingSurface();
+		   }
+		   mousedown.x=loc.x;
+		   mousedown.y=loc.y;
+		   lastx=loc.x;
+		   lasty=loc.y;
+		   dragging=true;
+	   }
+	   canvas.onmousemove=function(e){
+		   var loc;
+		   if(dragging){
+			   e.preventDefault();
+			   loc=windowToCanvas(e.clientX,e.clientY);
+		   
+		   if(drawradio.checked){
+			    restoreDrawingSurface();
+			    //updateRubberband(loc);
+			    if(guidewires){
+			    	drawGuidewires(loc.x,loc.y);
+			    }
+		   }else{
+			   eraserLast();
+			   drawEraser(loc);
+		   }
+		   lastX=loc.x;
+		   lastY=loc.y;
+		 }
+	   };
+	   canvas.onmouseup=function (e){
+		   var loc=windowToCanvas(e.clientX,e.clientY);
+		   if(drawradio.checked){
+			   restoreDrawingSurface();
+			   //updateRubberband(loc);
+		   }
+		   if(eraserradio.checked){
+			   eraserLast();
+		   }
+		   dragging=false;
+	   }
+	   //controls event handlers
+	   strokestyleselect.onchange=function (e){
+		   
+		   ctx.strokeStyle=strokestyleselect.value;
+	   }
+	   fillstyleselect.onchange=function (e){
+		   ctx.fillStyle=fillstyleselect.value;
+	   }
+	   
+	   ctx.strokeStyle=strokestyleselect.value;
+	   ctx.fillStyle=fillstyleselect.value;
+	   drawGrid(grid_line_color,grid_horizontal_spacing,grid_vertical_spacing);
+	  
+		
+	</script>
+</body>
+</html>

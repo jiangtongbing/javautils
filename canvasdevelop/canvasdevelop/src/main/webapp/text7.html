@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>绘制圆周围的字</title>
+<style type="text/css">
+canvas{
+  border:1px solid #ccc;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="text/javascript">
+function getId(id) {
+	return document.getElementById(id);
+}
+//variables
+var ctx=getId("canvas").getContext("2d"),
+  text_fill_style='rgba(100,130,240,0.5)',
+  text_stroke_style='rgba(200,0,0,0.7)',
+  text_size=64,
+  circle={
+	x:canvas.width/2,
+	y:canvas.height/2,
+	radius:200
+  }
+//functions
+ function drawCircularText(string,startAngle,endAngle){
+	var radius=circle.radius,
+	angleDecrement=(startAngle-endAngle)/(string.length-1),
+	angle=parseFloat(startAngle),
+	index=0,
+	character;
+	ctx.save();
+	ctx.fillStyle=text_fill_style;
+	ctx.strokeStyle=text_stroke_style;
+	ctx.font=text_size+"px Lucida Sans";
+	while(index<string.length){
+		character=string.charAt(index);
+		ctx.save();
+		ctx.beginPath();
+		//先将坐标轴中心点移动到需要绘画的中心点。
+		ctx.translate(circle.x+Math.cos(angle)*radius,
+				circle.y-Math.sin(angle)*radius);
+		ctx.rotate(Math.PI/2-angle);
+		ctx.fillText(character,0,0);
+		ctx.strokeText(character,0,0);
+		angle-=angleDecrement;
+		index++;
+		ctx.restore();
+	}
+	ctx.restore();
+}
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+drawCircularText("clockwise around the circle",Math.PI*2,Math.PI/8);
+</script>
+</body>
+</html>

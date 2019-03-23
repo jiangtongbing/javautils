@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>综合应用</title>
+<style type="text/css">
+  *{
+    margin:0px;
+    padding:0px;
+  }
+  #frame{
+     position:absolute;
+     left:10;
+     top:10;
+  }
+  #canvas{
+     border:1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="500">
+  browser not support canvas
+</canvas>
+<div id="frame">
+  <Button id="eraseAllButton">eraseAllButton</Button>&nbsp;
+  <select id="strokeStyleSelect">
+    <option value="blue">blue</option>
+    <option value="yellow">yellow</option>
+    <option value="green">green</option>
+    <option value="red">red</option>
+    <option value="black">black</option>
+  </select>&nbsp;
+   <select id="fillStyleSelect">
+    <option value="blue">blue</option>
+    <option value="yellow">yellow</option>
+    <option value="green">green</option>
+    <option value="red">red</option>
+    <option value="black">black</option>
+  </select>&nbsp;
+  fillCheckbox<input type="checkbox" id="fillCheckbox">&nbsp;
+  editCheckbox<input type="checkbox" id="editCheckbox">&nbsp;
+  sidesSelect<input type="number" id="sidesSelect">
+  
+</div>
+<script type="text/javascript">
+   var canvas=document.getElementById("canvas"),
+   ctx=canvas.getContext('2d'),
+   eraseAllButton=document.getElementById("eraseAllButton"),
+   strokeStyleSelect=document.getElementById("strokeStyleSelect"),
+   fillStyleSelect=document.getElementById("fillStyleSelect"),
+   fillCheckbox=document.getElementById("fillCheckbox"),
+   editCheckbox=document.getElementById("editCheckbox"),
+   sidesSelect=document.getElementById("sidesSelect"),
+   drawingSurfaceImageData,
+   mousedown={},
+   rubberbandRect={},
+   dragging=false, //防止多次拖拽。
+   draggingOffsetX,
+   draggingOffsetY,
+   sides=8, //默认八边形
+   startAngle=0, //默认从0度角开始计算顶点。
+   guidewires=true,//默认开启辅助线
+   editing=false, //默认不编辑
+   polygons=[]; //保存图像的数组。
+   
+   //点
+   var Point=function (x,y){
+	   this.x=x;
+	   this.y=y;
+   }
+   
+   //Polygon构造器、
+   var Polygon=function (centerX,centerY,radius,sides,startAngle,strokeStyle,fillStyle,filled){
+	   this.x=centerX;
+	   this.y=centerY;
+	   this.radius=radius;
+	   this.sides=sides;
+	   this.startAngle=startAngle;
+	   this.strokeStyle=strokeStyle;
+	   this.fillStyle=fillStyle;
+	   this.filled=filled;
+	   
+   }
+   //给Polygon的原型对象注册方法。
+   Polygon.prototype={
+		 getPoints:function (){
+			 var points=[],angle=this.startAngle||0;
+			 for(var i=0;i<this.sides;i++){
+				 points.push(new Point(this.x+this.radius*Math.sin(angle),
+						               this.y-this.radius*Math.cos(angle)));
+				 angle+=2*Math.PI/this.sides;
+			 }
+			 return points;
+		 },
+		   //创建多边形核心代码
+		 createPath:function (ctx){
+			 var points=this.getPoints();
+			 ctx.beginPath();
+			 ctx.moveTo(points[0].x,points[0].y);
+			 for(var i=1;i<this.sides;++i){
+				 ctx.lineTo(points[i].x,points[i].y);
+			 }
+			 ctx.closePath();
+		 },
+		 stroke:function(ctx){
+			 ctx.save();
+			 this.createPath(ctx);
+			 ctx.strokeStyle=this.strokeStyle;
+			 ctx.stroke();
+			 ctx.restore();
+		 },
+		 fill:function (ctx){
+			 ctx.save();
+			 this.createPath(ctx);
+			 ctx.fillStyle=this.fillStyle;
+			 ctx.fill();
+			 ctx.restore();
+		 },
+		 move:function (x,y){
+			 this.x=x;
+			 this.y=y;
+		 }		   
+   };
+   
+   //functions 
+   function drawGrid(color,stepx,stepy){
+	     //栅格。
+	   //画橡皮筋辅助线。
+  	 ctx.save();
+  	 ctx.shadowColor=undefined;
+  	 ctx.shadowOffsetX=0;
+  	 ctx.shadowOffsetY=0;
+  	 ctx.strokeStyle=color;
+  	 ctx.fillStyle='#ffffff';
+  	 ctx.lineWidth=0.5;
+  	 ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  	 for(var i=stepx+0.5;i<ctx.canvas.width;i+=stepx){
+  		 ctx.beginPath();
+  		 ctx.moveTo(i,0);
+  		 ctx.lineTo(i,ctx.canvas.height);
+  		 ctx.stroke();
+  	 }
+  	 for(var i=stepy+0.5;i<ctx.canvas.height;i+=stepy){
+  		 ctx.beginPath();
+  		 ctx.moveTo(0,i);
+  		 ctx.lineTo(ctx.canvas.width,i);
+  		 ctx.stroke();
+  	 }
+  	 ctx.restore();
+   }
+   //坐标转换。
+   function windowToCanvas(x,y){
+	   var bbox=canvas.getBoundingClientRect();
+	   return {
+		   x:x-bbox.left*(canvas.width/bbox.width),
+	       y:y-bbox.top*(canvas.height/bbox.height)
+	   };
+   }
+   //保存之前绘画的内容
+   function saveDrawingSurface(){
+	   drawingSurfaceImageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+   }
+   //恢复之前绘制的内容
+   function restoreDrawingSurface(){
+	   ctx.putImageData(drawingSurfaceImageData,0,0);
+   }
+   //画多边形
+   function drawPolygon(polygon){
+	   ctx.beginPath();
+	   polygon.createPath(ctx);
+	   polygon.stroke(ctx);
+	   if(fillCheckbox.checked){
+		   polygon.fill(ctx);
+	   }
+   }
+   //rubberbands 橡皮筋更新
+   function updateRubberbandRectangle(loc){
+	   rubberbandRect.width=Math.abs(loc.x-mousedown.x);
+	   rubberbandRect.height=Math.abs(loc.y-mousedown.y);
+	   if(loc.x>mousedown.x) rubberbandRect.left=mousedown.x;
+	   else    rubberbandRect.left=loc.x;
+	   if(loc.y>mousedown.y)  rubberbandRect.top=mousedown.y;
+	   else rubberbandRect.top=loc.y;
+   }
+   //画形状、
+   function drawRubberbandShape(loc,sides,startAngle){
+	   var polygon=new Polygon(mousedown.x,mousedown.y,
+			   rubberbandRect.width,parseInt(sidesSelect.value),
+			   (Math.PI/180)*parseInt(0),//startAngleSelect.value),
+			   ctx.strokeStyle,
+			   ctx.fillStyle,
+			   fillCheckbox.checked);
+	   drawPolygon(polygon);
+	   if(!dragging){
+		   polygons.push(polygon);
+	   }
+   }
+   function updateRubberband(loc,sides,startAngle){
+	   updateRubberbandRectangle(loc);
+	   drawRubberbandShape(loc,sides,startAngle);
+   }
+   //guidewires
+   function drawHorizontalLine(y){
+	   ctx.beginPath();
+	   ctx.moveTo(0,y+0.5);
+	   ctx.lineTo(ctx.canvas.width,y+0.5);
+	   ctx.stroke();
+   }
+   function drawVerticalLine(x){
+	   ctx.beginPath();
+	   ctx.moveTo(x+0.5,0);
+	   ctx.lineTo(x+0.5,ctx.canvas.height);
+	   ctx.stroke();
+   }
+   function drawGuidewires(x,y){
+	   ctx.save();
+	   ctx.strokeStyle='rgba(0,0,230,0.4)';
+	   ctx.lineWidth=0.5;
+	   drawVerticalLine(x);
+	   drawHorizontalLine(y);
+	   ctx.restore();
+   }
+   function drawPolygons(){
+	   polygons.forEach(function (polygon){
+		    drawPolygon(polygon); 
+	   });
+   }
+   //Dragging  开始拖拽。
+   function startDragging(loc){
+	   saveDrawingSurface();
+	   mousedown.x=loc.x;
+	   mousedown.y=loc.y;
+   }
+   //开始编辑
+   function startEditing(){
+	   canvas.style.cursor='pointer';
+	   editing=true;
+   }
+   //结束编辑
+   function stopEditing(){
+	   canvas.style.cursor="crosshair";
+	   editing=false;
+   }
+   //event handlers 
+   canvas.onmousedown=function (e){
+	   var loc=windowToCanvas(e.clientX,e.clientY);
+	   e.preventDefault();
+	   if(editing){
+		    //处于编辑状态，遍历所有的多边形。
+		   polygons.forEach(function (polygon){
+			     polygon.createPath(ctx);
+			       //如果选中的点在多边形内部。
+			     if(ctx.isPointInPath(loc.x,loc.y)){
+			    	  startDragging(loc);
+			    	  dragging=polygon;
+			    	  draggingOffsetX=loc.x-polygon.x;
+			    	  draggingOffsetY=loc.y-polygon.y;
+			    	  return;
+			     }
+		   });		    
+	   }else{
+		   startDragging(loc);
+		   dragging=true;
+	   }
+   };
+   canvas.onmousemove=function (e){
+	   var loc=windowToCanvas(e.clientX,e.clientY);
+	   e.preventDefault();
+	     //编辑模式下的拖拽。
+	   if(editing&&dragging){
+		   dragging.x=loc.x-draggingOffsetX;
+		   dragging.y=loc.y-draggingOffsetY;
+		   ctx.clearRect(0,0,canvas.width,canvas.height);
+		   drawGrid('lightgray',10,10);
+		   drawPolygons();
+	   }else{
+		   if(dragging){
+			   restoreDrawingSurface();
+			   updateRubberband(loc,sides,startAngle);
+			   if(guidewires){
+				   drawGuidewires(mousedown.x,mousedown.y);
+			   }
+		   }
+	   }
+   };
+   canvas.onmouseup=function (e){
+	   var loc=windowToCanvas(e.clientX,e.clientY);
+	   dragging=false;
+	   if(!editing){
+		   restoreDrawingSurface();
+		   updateRubberband(loc);
+	   }
+   };
+   eraseAllButton.onclick=function (e){
+	    ctx.clearRect(0,0,canvas.width,canvas.height);
+	    drawGrid('lightgray',10,10);
+	    saveDrawingSurface();
+   };
+   strokeStyleSelect.onchange=function (e){
+	   ctx.strokeStyle=strokeStyleSelect.value;
+   }
+   fillStyleSelect.onchange=function (e){
+	   ctx.fillStyle=fillStyleSelect.value;
+   }
+   editCheckbox.onchange=function (e){
+	   if(editCheckbox.checked){
+		   startEditing();
+	   }else{
+		   stopEditing();
+	   }
+   };
+   ctx.strokeStyle=strokeStyleSelect.value;
+   ctx.fillStyle=fillStyleSelect.value;
+   //绘制阴影
+   ctx.shadowColor='rgba(0,0,0,0.4)';
+   ctx.shadowOffsetX=2;
+   ctx.shadowOffsetY=2;
+   ctx.shadowBlur=4;
+   drawGrid('lightgray',10,10);
+   
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+
+<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+canvas {
+	border: 1px solid #ccc;
+	position: absolute;
+}
+
+#settings {
+	height: 200px;
+	width: 100%;
+	color: #ffffff;
+	position: absolute; left : 0;
+	top: 0;
+	left: 0;
+}
+
+.nbox {
+	width: 100%;
+	height: 100%;
+	display: none; background-color : #a28e63;
+	padding: 10px 10px 10px 10px;
+	background-color: #a28e63;
+}
+
+.step {
+	margin-top: 10px;
+}
+
+#apply {
+	cursor: pointer;
+	border-bottom: 1px solid #ffffff;
+}
+</style>
+</head>
+<body>
+	<canvas id="myCanvas">
+           您的浏览器不支持canvas  
+    </canvas>
+	<!-- 设置面板 -->
+	<script type="text/javascript">
+	
+	   function invaliate(ctx){
+		  ctx.clearRect(0,0,ctx.width,ctx.height);
+	   }
+	
+	   window.onload=function (){
+		      var canvas=document.getElementById("myCanvas");
+		      var ctx=canvas.getContext('2d');
+		      
+		    //如果需要绘制一个像素宽的线段，则需要将两个点的起点和终点都放置在一个整像素的中间。
+	          ctx.lineWidth=1;
+	          ctx.beginPath();
+	          ctx.moveTo(50,10);
+	          ctx.lineTo(450,10); //2个像素宽
+	          ctx.stroke();
+	          ctx.beginPath();
+	          ctx.moveTo(50.5,50.5);
+	          ctx.lineTo(450.5,50.5); //一个像素宽
+	          ctx.stroke();
+	   }
+	</script>
+</body>
+</html>

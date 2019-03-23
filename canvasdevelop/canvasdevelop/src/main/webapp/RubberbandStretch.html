@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>橡皮筋拉伸</title>
+<style type="text/css">
+  #canvas{
+     border:1px solid #ccc;
+  }
+  
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="500"></canvas>
+</body>
+<script type="text/javascript">
+   var canvas=document.getElementById("canvas"),
+   ctx=canvas.getContext("2d"), //画板、
+   offscreencanvas=document.createElement("canvas"),
+   offscreenctx=offscreencanvas.getContext("2d"),
+   dragging=false, //是否开始拖拽。
+   mousedown={},
+   imageData;
+   
+   //坐标转换。
+   function windowToCanvas(x,y){
+	   var bbox=canvas.getBoundingClientRect();
+	   return {
+		   x:x-bbox.left*(canvas.width/bbox.width),
+	       y:y-bbox.top*(canvas.height/bbox.height)
+	   };
+   }
+   //
+   function saveImage(){
+	   imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+	   
+   }
+   function loadImage(){
+	   ctx.putImageData(imageData,0,0);   
+   }
+   //清空画板
+   function clear(){
+	   ctx.clearRect(0,0,canvas.width,canvas.height);
+   }
+   
+   //functions
+   function drawRect(x,y){
+	   if(dragging){
+		    clear();
+		    ctx.beginPath();
+		    ctx.rect(mousedown.x,mousedown.y,Math.abs(x-mousedown.x),Math.abs(y-mousedown.y));
+		    ctx.stroke();
+	   }
+   }
+   canvas.onmousedown=function (e){
+	   	var loc= windowToCanvas(e.clientX,e.clientY);
+	   	mousedown.x=loc.x;
+	   	mousedown.y=loc.y;
+	   	dragging=true;
+	   	saveImage();
+   }
+   canvas.onmousemove=function (e){
+	   var loc;
+	   if(dragging){
+		   loc=windowToCanvas(e.clientX,e.clientY);
+		   drawRect(loc.x,loc.y)
+	   }
+   }
+   canvas.onmouseup=function (e){
+	   loadImage();
+	   dragging=false;
+   }
+   //设置离屏画板
+   offscreencanvas.width=canvas.width;
+   offscreencanvas.height=canvas.height;
+   
+   
+</script>
+</html>

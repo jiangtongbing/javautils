@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>图案</title>
+</head>
+<body>
+  <canvas id="cas" width="1000" height="500">
+  </canvas>
+</body>
+
+
+<script type="text/javascript">
+   window.onload=function (){
+	   var canvas=document.getElementById('cas'),
+	       context=canvas.getContext('2d'),
+	       image=new Image();	
+	   image.src='image/Arrow-up.png';
+	   image.onload=function (e){
+		 
+		   var pattern=context.createPattern(image,'repeat');    //repeat,repeat-x,repeat-y,no-repeat
+		   context.fillStyle=pattern;
+		   context.fillRect(0,0,canvas.width,canvas.height);
+		   context.fill();   
+	   };	   
+   }
+   
+</script>
+</html>

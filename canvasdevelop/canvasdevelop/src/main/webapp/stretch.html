@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>拉伸式动画</title>
+<style type="text/css">
+  *{
+    margin:0px;
+    padding:0px;
+  }
+  #frame{
+     position:absolute;
+     left:10;
+     top:10;
+  }
+  #canvas{
+     border:1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="500">
+  browser not support canvas
+</canvas>
+<script type="text/javascript">
+var canvas=document.getElementById("canvas"),
+ctx=canvas.getContext('2d');
+//functions 
+function drawText(){
+	ctx.save();
+	//设置阴影
+	ctx.shadowColor="rgba(100,100,150,0.8)";
+	ctx.shadowOffsetX=5;
+	ctx.shadowOffsetY=5;
+	ctx.shadowBlur=10;
+	//设置字体样式等
+	ctx.fillStyle="cornflowerblue";
+	ctx.fillText('HTML5',20,250);
+	ctx.strokeStyle='yellow';
+	ctx.strokeText('HTML5',20,250);
+	ctx.restore();
+}
+function setClippingRegion(radius){
+	ctx.beginPath();
+	ctx.arc(canvas.width/2,canvas.height/2,radius,0,Math.PI*2,false);
+	ctx.clip();
+}
+function fillCanvas(color){
+	ctx.fillStyle=color;
+	ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+function endAnimation(loop){
+	clearInterval(loop);
+	setTimeout(function (e){
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+		drawText();
+	},1000);
+}
+function drawAnimationFrame(radius){
+	setClippingRegion(radius);
+	fillCanvas("lightgray");
+	drawText();
+}
+function animate(){
+	var radius=canvas.width/2,loop;
+	loop=window.setInterval(function (){
+		 radius-=canvas.width/100;
+		 fillCanvas("charcoal");
+		 if(radius>0){
+			 ctx.save();
+			 drawAnimationFrame(radius);
+			 ctx.restore();
+		 }else{
+			 endAnimation(loop);
+		 }
+	},16);
+}
+canvas.onmousedown=function (e){
+	 animate();
+}
+ctx.lineWidth=0.5;
+ctx.font="128pt Comic-sans";
+drawText();
+
+   
+</script>
+</body>
+</html>

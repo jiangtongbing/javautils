@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>路径</title>
+</head>
+<body>
+<canvas id="cas" width="400" height="400">
+
+</canvas>
+<script type="text/javascript">
+  window.onload=function (){
+	    var canvas=document.getElementById('cas'),
+	    context=canvas.getContext('2d');
+	    context.beginPath();//清除所有子路径,开启一条新的路径。
+	    context.rect(10,10,100,100);
+	    context.stroke();   //绘制当前路径。
+	    //context.beginPath();
+	    context.rect(50,50,100,100);//在当前路径中添加了一条子路径。
+	    context.stroke(); //绘制当前路径和其所有子路径。
+  };
+        
+</script>
+</body>
+</html>

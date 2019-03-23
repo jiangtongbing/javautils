@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- 驱动 -->
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<title>原生版编写</title>
+<meta charset="utf-8" />
+<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+canvas {
+	border: 1px solid #ccc;
+	position: absolute;
+}
+
+#settings {
+	height: 200px;
+	width: 100%;
+	color: #ffffff;
+	position: absolute; left : 0;
+	top: 0;
+	left: 0;
+}
+
+.nbox {
+	width: 100%;
+	height: 100%;
+	display: none; background-color : #a28e63;
+	padding: 10px 10px 10px 10px;
+	background-color: #a28e63;
+}
+
+.step {
+	margin-top: 10px;
+}
+
+#apply {
+	cursor: pointer;
+	border-bottom: 1px solid #ffffff;
+}
+</style>
+</head>
+<body>
+	<canvas id="myCanvas" width="800" height="500">
+           您的浏览器不支持canvas  
+    </canvas>
+	<!-- 设置面板 -->
+	<script type="text/javascript">
+	
+	   function invaliate(ctx){
+		  ctx.clearRect(0,0,ctx.width,ctx.height);
+	   }
+	   //画虚线。
+	   function drawDashedLine(ctx,x1,y1,x2,y2,dashLength){
+		   dashLength=dashLength===undefined?5:dashLength;
+		   var deltaX=x2-x1;
+		   var deltaY=y2-y1;
+		   var numDashes=Math.floor(Math.sqrt(deltaX*deltaX+deltaY*deltaY)/dashLength);
+		   for(var i=0;i<numDashes;++i){
+			   ctx[i%2===0?'moveTo':'lineTo'](x1+(deltaX/numDashes)*i,y1+(deltaY/numDashes)*i);
+		   }
+		   ctx.stroke();
+	   }
+	   window.onload=function (){
+		      var canvas=document.getElementById("myCanvas");
+		      var ctx=canvas.getContext('2d');
+		      ctx.lineWidth=2;
+		      ctx.strokeStyle='blue';
+		      drawDashedLine(ctx,20,20,ctx.canvas.width-20,20);		    
+	   }
+	</script>
+</body>
+</html>

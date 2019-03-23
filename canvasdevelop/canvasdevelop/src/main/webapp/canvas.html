@@ -1,0 +1,876 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- 驱动 -->
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<title>原生版编写</title>
+<meta charset="utf-8" />
+<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+canvas {
+	border: 1px solid #ccc;
+	position: absolute;
+}
+
+#settings {
+	height: 200px;
+	width: 100%;
+	color: #ffffff;
+	position: absolute; left : 0;
+	top: 0;
+	left: 0;
+}
+
+.nbox {
+	width: 100%;
+	height: 100%;
+	display: none; background-color : #a28e63;
+	padding: 10px 10px 10px 10px;
+	background-color: #a28e63;
+}
+
+.step {
+	margin-top: 10px;
+}
+
+#apply {
+	cursor: pointer;
+	border-bottom: 1px solid #ffffff;
+}
+</style>
+</head>
+<body>
+	<canvas id="myCanvas">
+           您的浏览器不支持canvas  
+    </canvas>
+	<!-- 设置面板 -->
+	<div id="settings">
+		<div class="nbox" id="nbox">
+			<div class="step">
+				<span>舞台比例:</span><input type="text" id="stageScale">
+			</div>
+			<div class="step">
+				<span>帧率:</span><input type="text" id="frame">
+			</div>
+			<div class="step">
+				<span id="apply">应用</span>
+			</div>
+		</div>
+	</div>
+	<!-- 系统事件 -->
+	<script type="text/javascript">
+		//注册自定义右击事件
+		$.fn.extend({
+			"rightclick" : function(fn) {
+				//禁用默认的右击事件
+				$(this).bind("contextmenu", function(e) {
+					return false;
+				})
+				//当鼠标右键抬起时。
+				$(this).mouseup(function(e) {
+					// 1=左键  2=中间滑  3=右键
+					if (e.which == 3) {
+						fn(e);
+					}
+				});
+				return false;
+			}
+		});
+		//居中代码
+		function middle(out, main) {
+			//获取外面dom的宽，高。 
+			var outWidth = out.width();
+			var outHeight = out.height();
+			var mainWidth = main.width();
+			var mainHeight = main.height();
+			main.css({
+				"left" : (outWidth - mainWidth) / 2,
+				"top" : (outHeight - mainHeight) / 2
+			});
+		}
+		//canvas适应全屏。  
+		function fillScreen(jdom) {
+			jdom.attr({
+				"width" : windowWidth,
+				"height" : windowHeight
+			});
+		}
+		
+	</script>
+	<!-- 面板事件设置 -->
+	<script type="text/javascript">
+		//显示面板
+		function showSettings(e) {
+			pause();
+			$("#nbox").show(10);
+		}
+		//影藏面板
+		function hideSettings(e) {
+			$("#nbox").hide(10, function() {
+				start();
+			});
+		}
+		//应用设置。
+		function applySet() {
+			var scale = $("#stageScale").val().trim();
+			stageScale.ws = parseFloat(scale);
+		}
+		$(function() {
+			//给窗体设置右击事件。
+			$(window).rightclick(showSettings);
+			
+			//设置按钮事件
+			$("#apply").click(function() {
+				applySet();
+				hideSettings();
+			});
+			
+		});
+	</script>
+	<!-- 源码 -->
+	<script type="text/javascript">
+		//         //画大圆
+		//         function drawBg() {
+		//             cxt.beginPath();
+		//             cxt.arc(arr.bigcircle.x,arr.bigcircle.y,arr.r1,0,Math.PI*2,false);
+		//             cxt.strokeStyle = "blue";
+		//             cxt.lineWidth = 2;
+		//             cxt.stroke();
+		//             cxt.closePath();
+		//             arr.smallcircle.forEach(function (value, index) {
+		//                 cxt.save();
+		//                 cxt.strokeStyle = "red";
+		//                 cxt.lineWidth = 1;
+		//                 cxt.translate(arr.bigcircle.x, arr.bigcircle.y);
+		//                 cxt.rotate(value.degree * Math.PI / 180);
+		//                 cxt.beginPath();
+		//                 cxt.arc(arr.r1 - arr.r2, 0, arr.r2, 0, Math.PI * 2, false);
+		//                 cxt.closePath();
+		//                 cxt.stroke();
+		//                 cxt.restore();
+		//                 cxt.font = "30px Arial";
+		//                 cxt.beginPath();
+		//                 cxt.fillText(value.tt, value.x - cxt.measureText(value.tt).width / 2, value.y + cxt.measureText(value.tt).width / 2);
+		//                 cxt.closePath();
+		//                 cxt.stroke();
+		//             });
+		//         }
+		//         //小圆参数
+		//         function getSmallCircle(param) {
+		//             //在此需要维护胜利的逻辑代码
+		//             //默认返回4个一，100%胜利
+		//             /*
+		//             */
+		//             //根据难度生成对应的角度。
+		//             var tmpobj = [];
+		//             var everDegree = 360 / param.count;
+		//             for (var i = 0; i < param.count; i++)
+		//             {
+		//                 tmpobj[i] = {};
+		//                 tmpobj[i].degree = i * everDegree;
+		//                 //随机生成文本。
+		//                 var tt = Math.random() * param.maxNum;
+		//                 tt = Math.round(tt);
+		//                 if (tt == 0)
+		//                     tt = 1;
+		//                 tmpobj[i].tt = tt;
+		//                 //根据当前的度数算出坐标。
+		//                 var x, y;
+		//                 x =arr.bigcircle.x + (arr.r1 - arr.r2) * Math.cos(i * everDegree * Math.PI / 180);
+		//                 y =arr.bigcircle.y + (arr.r1 - arr.r2) * Math.sin(i * everDegree * Math.PI / 180);
+		//                 tmpobj[i].x = x;
+		//                 tmpobj[i].y = y;
+		//             }
+		//             return tmpobj;
+		//         } 
+		//         //循环绘制事件
+		//         function draw() {
+		//             //4个圆所以每次旋转按90度旋转。
+		//             //n个圆则按照360/n度旋转。
+		//             //第一个时针按逆时针旋转。
+		//             //第二个时针按顺时针旋转。
+		//             //算出每次旋转的终止位置。
+		//             //时间间隔为1秒。
+		//             //计算每次旋转的角度。
+		//             var count = arr.smallcircle.length;
+		//             var degree = 360 / count;
+
+		//             //第一次终点，即获得用户点击的圆的需转过的角度。
+
+		//             //画第一根时针。
+		//            t1 = setInterval(function () {
+		//                 var endDegree = arr.smallcircle[p].degree;
+		//                 if (arr.smallcircle[p].tt == "") {
+		//                     return;
+		//                 }
+
+		//                 cxt.clearRect(0, 0, 400, 400);
+		//                 //此处为不变的地方。
+		//                 drawBg();
+		//                  //变化的地方
+
+		//                 //第一根指针。
+		//                 cxt.save();
+		//                 cxt.strokeStyle = "black";
+		//                 cxt.lineWidth = 5;
+		//                 cxt.translate(arr.bigcircle.x, arr.bigcircle.y);
+
+		//                 if (arr.line[0].degree%360!= endDegree)
+		//                 {
+
+		//                     arr.line[0].degree = arr.line[0].degree - degree;
+		//                     if(arr.line[0].degree<0)
+		//                     {
+		//                         arr.line[0].degree = arr.line[0].degree + 360;
+		//                     }
+		//                 }
+
+		//                 cxt.rotate(arr.line[0].degree * Math.PI / 180);
+		//                 cxt.beginPath();
+		//                 cxt.moveTo(0, 0);
+		//                 cxt.lineTo(arr.r1-arr.r2, 0);
+		//                 cxt.stroke();
+		//                 cxt.closePath();
+		//                 cxt.restore();
+		//                 //第二根指针。
+		//                 cxt.save();
+		//                 cxt.strokeStyle = "black";
+		//                 cxt.lineWidth = 5;
+		//                 cxt.translate(arr.bigcircle.x, arr.bigcircle.y);
+		//                 if (arr.line[1].degree % 360 != endDegree) {
+
+		//                     arr.line[1].degree = arr.line[1].degree + degree;
+		//                     if(arr.line[1].degree>360)
+		//                     {
+		//                         arr.line[1].degree = arr.line[1].degree - 360;
+		//                     }
+		//                 }
+
+		//                 cxt.rotate(arr.line[1].degree * Math.PI / 180);
+		//                 cxt.beginPath();
+		//                 cxt.moveTo(0, 0);
+		//                 cxt.lineTo(arr.r1-arr.r2, 0);
+		//                 cxt.stroke();
+		//                 cxt.closePath();
+		//                 cxt.restore();
+		//                 if ((Math.abs(arr.line[0].degree) % 360) == endDegree && (Math.abs(arr.line[1].degree) % 360) == endDegree) {
+		//                     //结束此事件后，随即触发后续动作。
+
+		//                     setTimeout("DrawToClip()",200);
+		//                     clearInterval(t1);
+		//                     return;
+		//                 }
+
+		//             }, 1000);
+		//         }
+		//         function DrawToClip() {
+
+		//             var currentText = arr.smallcircle[p].tt;
+		//             if (currentText == "")
+		//             {
+		//                 return;
+		//             }
+		//             arr.smallcircle[p].tt = "";
+		//             var count = arr.smallcircle.length;
+		//             var degree = 360 / count;
+		//             var endDegree = currentText * degree;
+		//             var currentDegree = 0;
+
+		//             t2 = setInterval(function () {
+		//                 cxt.clearRect(0, 0, 400, 400);
+		//                 //此处为不变的地方。
+		//                 drawBg();
+		//                 cxt.save();
+		//                 cxt.strokeStyle = "black";
+		//                 cxt.lineWidth = 5;
+		//                 cxt.translate(arr.bigcircle.x, arr.bigcircle.y);
+
+		//                 arr.line[0].degree = arr.line[0].degree - degree;
+		//                 if (arr.line[0].degree < 0) {
+		//                     arr.line[0].degree = arr.line[0].degree + 360;
+		//                 }
+
+		//                 cxt.rotate(arr.line[0].degree * Math.PI / 180);
+		//                 cxt.beginPath();
+		//                 cxt.moveTo(0, 0);
+		//                 cxt.lineTo(arr.r1 - arr.r2, 0);
+		//                 cxt.stroke();
+		//                 cxt.closePath();
+		//                 cxt.restore();
+
+		//                 cxt.save();
+		//                 cxt.strokeStyle = "black";
+		//                 cxt.lineWidth = 5;
+		//                 cxt.translate(arr.bigcircle.x, arr.bigcircle.y);
+
+		//                 arr.line[1].degree = arr.line[1].degree + degree;
+		//                 if (arr.line[1].degree > 360) {
+		//                     arr.line[1].degree = arr.line[1].degree - 360;
+		//                 }
+		//                 cxt.rotate(arr.line[1].degree * Math.PI / 180);
+		//                 cxt.beginPath();
+		//                 cxt.moveTo(0, 0);
+		//                 cxt.lineTo(arr.r1 - arr.r2, 0);
+		//                 cxt.stroke();
+		//                 cxt.closePath();
+		//                 cxt.restore();
+		//                 currentDegree+=degree;
+		//                 if(currentDegree==endDegree)
+		//                 {
+		//                     isWin();
+		//                     clearInterval(t2);
+		//                 }
+		//             }, 1000);
+
+		//         }
+		//         //游戏胜利与否的条件
+		//         function isWin() {
+		//             var x1=0, x2=0,x3=0;
+		//             arr.smallcircle.forEach(function (value,i) {
+		//                 if (arr.line[0].degree == value.degree)
+		//                 {  
+		//                     //检查对应的时针所指的圆中是否存在文本
+		//                     if (value.tt != "")
+		//                     {
+		//                         x1 = 1;
+		//                     }
+		//                 }
+		//                 if (arr.line[1].degree == value.degree) {
+		//                     //检查对应的时针所指的圆中是否存在文本
+		//                     if (value.tt != "") {
+		//                         x2 = 1;
+		//                     }
+		//                 }
+		//                 if (value.tt != "")
+		//                 {   //存在一个有文本的就说明游戏继续。
+		//                     x3 = 1;
+		//                 }
+		//             });
+		//             if (x1 == 0 && x2 == 0 && x3 == 1)
+		//             {
+		//                  alert("you lose!")
+		//             } 
+
+		//             if (x1 == 0 && x2 == 0 && x3 == 0) {
+		//                     alert("you win!");
+		//             } 
+		//                 isClicking = false;
+
+		//         }   
+		//         //获取事件发生坐标
+		//         function getEventPosition(ev) {
+		//             var x, y;
+		//             if (ev.layerX || ev.layerX == 0) {
+		//                 x = ev.layerX;
+		//                 y = ev.layerY;
+		//             } else if (ev.offsetX || ev.offsetX == 0) {
+		//                 x = ev.offsetX;
+		//                 y = ev.offsetY;
+		//             }
+		//             console.log("x:"+x+",y:"+y);
+		//             return { x: x, y: y };
+		//         }
+
+		//         ////重玩
+		//         function Replay() {
+
+		//            //重置参数
+		//            arr = {
+		//                r1: 200,
+		//                r2: 25,
+		//                bigcircle: { x: 200, y: 200 },
+		//                smallcircle: getSmallCircle(),
+		//                line: [{ degree: 270 }, { degree: 270 }]
+		//            }
+		//            StartPlay();
+		//         }
+
+		//         //开始玩
+		//         function StartPlay() {
+		//             //绘制一个圆形基盘作为时钟圆形
+		//             cxt.clearRect(0, 0, 400, 400);
+		//             drawBg();
+		//             //画两根时针
+		//             arr.line.forEach(function (value, index) {
+		//                 cxt.save();
+		//                 cxt.strokeStyle = "black";
+		//                 cxt.lineWidth = 5;
+		//                 cxt.translate(arr.bigcircle.x, arr.bigcircle.y);
+		//                 cxt.rotate(value.degree * Math.PI / 180);
+		//                 cxt.beginPath();
+		//                 cxt.moveTo(0, 0);
+		//                 cxt.lineTo(arr.r1 - arr.r2, 0);
+		//                 cxt.stroke();
+		//                 cxt.closePath();
+		//                 cxt.restore();
+		//             });
+		//         }
+
+		//         //level参数
+		//         var glevel = {
+		//             easy: {
+		//                 count: 4,
+		//                 maxNum: 2
+		//             },
+		//             common: {
+		//                 count: 6,
+		//                 maxNum: 3
+		//             },
+		//             hard: {
+		//                 count: 8,
+		//                 maxNum: 4
+		//             }
+		//         };
+		//         //程序入口。
+		//         //总参数
+		//         var arr = {
+		//             r1: 200,
+		//             r2: 25,
+		//             bigcircle: { x: 200, y: 200 },
+		//             line: [{ degree: 270 }, { degree: 270 }]
+		//         };
+		//         arr.smallcircle = getSmallCircle(glevel.hard);
+
+		//         var c = document.getElementById("myCanvas");
+		//         var re_btn = document.getElementById("replay");
+		//         var t1, p, t2;
+		//         var isClicking = false;
+		//         var cxt = c.getContext("2d");
+		//         //StartPlay();
+		//         //注册事件
+		//             c.addEventListener('click', function (e) {
+		//                 //获取事件的坐标。
+		//                 if (isClicking)
+		//                 {
+		//                     return;
+		//                 }
+
+		//                 var isclick = false;
+		//                  p = getEventPosition(e);
+		//                 //判断事件发生点是否在圆内。
+		//                 arr.smallcircle.forEach(function (value, i) {
+		//                     var from = Math.sqrt((value.x - e.x) * (value.x - e.x) + (value.y - e.y) * (value.y - e.y));
+		//                     //首先要在圆内，其次一个时针指在圆内。
+
+		//                     if (from <= arr.r2 &&(value.degree==arr.line[0].degree%360||value.degree==arr.line[1].degree%360))
+		//                     {  //说明在某个圆内
+		//                         isclick = true;
+		//                         p = i;
+		//                     }
+		//                 });
+		//                 if (isclick)
+		//                 {
+		//                     //由于多次的点击会引发多个事件，这里canvas不可用。
+		//                     isClicking = true;
+		//                     draw();
+		//                 }
+
+		//             }, false);
+		//             //re_btn.addEventListener("click",function () {
+		//             //      Replay();
+		//             //}, false);
+	</script>
+
+	<!-- 封装 -->
+	<script type="text/javascript">
+		//窗口宽度
+		var windowWidth = $(window).width();
+		//窗口高度
+		var windowHeight = $(window).height();
+		//舞台比例
+		var stageScale = {
+			ws : 0.8, //宽度比例
+			hs : 0.8
+		//高度比例   
+		}
+		//帧速,默认60
+		var frame = 60;
+		//主线程
+		var mainThread = null;
+		//舞台参数
+		//舞台为矩形状，始终相对于窗口居中。			
+		var stage = {
+			getX : function() {
+				return (windowWidth - windowWidth * stageScale.ws) / 2;
+			},
+			getY : function() {
+				return (windowHeight - windowHeight * stageScale.hs) / 2;
+			},
+			getWidth : function() {
+				return windowWidth * stageScale.ws;
+			},
+			getHeight : function() {
+				return windowHeight * stageScale.hs;
+			},
+			//当窗体是矩形时，返回可以画的最大范围。
+			getMaxSize : function() {
+				return this.getWidth() > this.getHeight() ? this.getHeight()
+						: this.getWidth();
+			}
+		};
+		//画布
+		var cxt = document.getElementById("myCanvas").getContext("2d");
+
+		//形状
+		function TbShape() {
+			this.Style = "black";
+			this.lineWidth = 0;
+		}
+		//矩形
+		function TbRect() {
+			this.x = 0;
+			this.y = 0;
+			this.width = 0;
+			this.height = 0;
+			this.style = "black";
+			this.lineWidth = 0;
+		}
+		//圆
+		function TbCircle() {
+			//圆心x坐标
+			this.x = 0;
+			//圆心y坐标
+			this.y = 0;
+			//圆半径
+			this.r = 0;
+			//空心线的颜色。
+			this.style = "black";
+			//线条粗细程度。
+			this.lineWidth = 0;
+		}
+		//线
+		function TbLine() {
+			//第一个点
+			this.p1 = {
+				x : 0,
+				y : 0
+			};
+			this.p2 = {
+				x : 10,
+				y : 10
+			};
+			this.strokeStyle = "black";
+			this.lineWidth = 0;
+		}
+		//字
+		function TbText() {
+
+		}
+		
+		//画圆
+		function drawStrokeCircle(circle) {
+			//弄一个默认配置
+			var settings = {
+				style : "black",
+				lineWidth : 1,
+				x : 10,
+				y : 10,
+				r : 10,
+			};
+			settings = $.extend(settings, circle);
+			cxt.strokeStyle = settings.style;
+			cxt.lineWidth = settings.lineWidth;
+			cxt.beginPath();
+			cxt.arc(settings.x, settings.y, settings.r, 0, 2 * Math.PI);
+			cxt.closePath();
+			cxt.stroke();
+		}
+		//画线 
+		function drawLine(line) {
+			var settings = {
+				style : "black",
+				lineWidth : 1,
+				p1 : {
+					x : 0,
+					y : 0
+				},
+				p2 : {
+					x : 10,
+					y : 10
+				}
+			};
+			settings = $.extend(settings, line);
+			cxt.strokeStyle = settings.style;
+			cxt.lineWidth = settings.lineWidth;
+			cxt.beginPath();
+			cxt.moveTo(settings.p1.x, settings.p1.y);
+			cxt.lineTo(settings.p2.x, settings.p2.y);
+			cxt.stroke();
+			cxt.closePath();
+		}
+		//画矩形
+		function drawStrokeRect(rect) {
+			var settings = {
+				style : "black",
+				lineWidth : 1,
+				x : 0,
+				y : 0,
+				width : 10,
+				height : 10
+			};
+			settings = $.extend(settings, rect);
+			cxt.save();
+			cxt.strokeStyle = rect.style;
+			cxt.lineWidth = rect.lineWidth;
+			cxt.beginPath();
+			cxt.rect(rect.x, rect.y, rect.width, rect.height);
+			cxt.closePath();
+			cxt.stroke();
+			cxt.restore();
+		}
+		//画字
+		function drawText() {
+
+		}
+		//清除画板
+		function invalite() {
+			cxt.clearRect(0, 0, windowWidth, windowHeight);
+		}
+		//1.定义一个额外插件。
+		//2.给其添加个静态加载方法。
+		function Demo(params, game) {
+			this.params = params;
+			this.play = game;
+		}
+		
+		//demo1
+		function roundwind() {
+			//绕大圈的小圆。
+			var sc = {
+				x : stage.getX() + stage.getWidth() / 2,
+				y : stage.getY() + 20,
+				r : 20,
+				style : "red"
+			}
+			//大圈
+			var bc = {
+				x : stage.getX() + stage.getWidth() / 2,
+				y : stage.getY() + stage.getHeight() / 2,
+				r : stage.getMaxSize() / 2 - sc.r
+			}
+			drawStrokeCircle(bc);
+			this.params.calWind(bc, sc, this.params.count % 360);
+			this.params.count += 0.5;
+		}
+		//demo2
+		function randball() {
+              //自由落体的小球,起点y为0，x为舞台stage内随机一点。
+              drawStrokeCircle(this.params.c);
+              //画移动方块
+              drawStrokeRect(this.params.pingbar);
+              
+              this.params.c.y+=this.params.stepY;
+              this.params.c.x+=this.params.stepX;
+              //超出上边界，或者超出下边界
+              //this.params.c.y>=stage.getY()+stage.getHeight()-this.params.c.r
+              if(this.params.c.y<=stage.getY()+this.params.c.r||
+            		  this.params.c.y>=stage.getY()+stage.getHeight()-this.params.c.r
+                 ){
+            	  this.params.stepY=-this.params.stepY;
+              }
+              //超出左边界，或者超出右边界
+              if( this.params.c.x<=stage.getX()+this.params.c.r||
+                  this.params.c.x>=stage.getX()+stage.getWidth()-this.params.c.r){
+            	  this.params.stepX=-this.params.stepX;
+              }    
+              //画方块。
+              for(var i=0;i< this.params.rect.length;i++){
+            	  if(this.params.rect[i].state)
+            	    drawStrokeRect(this.params.rect[i]);   
+              }
+             
+              //把圆看成一个正方形。
+              var rr={
+            	  x:this.params.c.x-this.params.c.r,
+            	  y:this.params.c.y-this.params.c.r,
+            	  width:this.params.c.r,
+            	  height:this.params.c.r
+              }
+              //判断撞击
+              for(var i=0;i<this.params.rect.length;i++){
+            	   if(this.params.rect[i].state){
+            		   if(is_rect_intersect(this.params.rect[i],rr))
+            			    { this.params.rect[i].state=false;
+            			      this.params.stepY=-this.params.stepY; 
+            			    }
+            	   }
+              }
+              //小球与移动方块的撞击
+              if(is_rect_intersect(this.params.pingbar,rr)){
+            	  this.params.stepY=-this.params.stepY;
+              }
+		}
+		
+		
+		//判断两个矩形相交:
+		//如果两个矩形相交，则两个矩形的中心点分别在x，y方向上的距离之和，肯定会小于两个矩形分别在x，y方向上边长之和的一半。	
+		function is_rect_intersect(rect1,rect2){
+			 //两个矩形中心点在x方向上的距离之和
+			   var L1=Math.abs(rect1.x+rect1.width/2-rect2.x+rect2.width/2);
+			 //两个矩形中心点在y方向上的距离之和
+			   var L2=Math.abs(rect1.y+rect1.height/2-rect2.y+rect2.height/2);
+			 //两个矩形在x方向上的边长之和
+			   var R1=rect1.width+rect2.width;
+			 //两个矩形在y方向上的边长之和。
+			   var R2=rect1.height+rect2.height;
+			 if(L1<=R1/2&&L2<=R2/2)
+				 return true;
+			 return false;
+		}
+		
+		
+		//创建demo	
+		var demo = new Demo({
+			count:0,
+			calWind://绕圈运行，计算坐标
+			    function(bigCircle, smallCircle, degree) {
+				cxt.save();
+				//默认为红色
+				cxt.strokeStyle = smallCircle.style ? smallCircle.style : "red";
+				cxt.lineWidth = 1;
+				cxt.translate(bigCircle.x, bigCircle.y);
+				cxt.rotate(degree * Math.PI / 180);
+				cxt.beginPath();
+				cxt.arc(bigCircle.r, 0, smallCircle.r, 0, Math.PI * 2, false);
+				cxt.closePath();
+				cxt.fill();
+				cxt.restore();
+		      }		 
+		}, roundwind);
+		var demo1=new Demo({
+			c:{
+          	  x: Math.random()*stage.getWidth()+stage.getX()+20,
+              y: stage.getHeight()-41,
+              r: 20
+            },
+            stepX:-6,
+            stepY:-8,
+            rect:(function (){
+            	
+            	var rectarr=[];
+            	var r=stage.getMaxSize()/20*3;
+            	//方块的高度。
+            	var rectH=stage.getHeight()/6/3;
+            	//方块的宽度。
+            	var rectW=stage.getWidth()/10;
+            	
+            	for(var i=0;i<10;i++){      	   
+                  for(var j=0;j<3;j++){
+            	    rectarr.push({
+            	    	x:stage.getX()+rectW*i,
+            	    	y:stage.getY()+rectH*j,
+            	    	width:rectW,
+            	    	height:rectH,
+            	    	state:true
+            	    });
+                  }
+            	}
+            	return rectarr; 
+            })(),
+            e1:(function (){
+            	//给窗体注册键盘按下事件。
+            	
+    			$(window).keydown(function (e){
+                      if(e.keyCode==37){           	  
+                    	  if(demo1.params.pingbar.x-stage.getX()<30&&demo1.params.pingbar.x-stage.getX()>0)
+                    		  demo1.params.pingbar.x=stage.getX();
+                    	  
+                    	  if(demo1.params.pingbar.x-stage.getX()>=30)
+                    		  demo1.params.pingbar.x-=30;
+                      }
+                      if(e.keyCode==39){
+                    	  //右边碰撞。
+                    	  if(stage.getX()+stage.getWidth()-demo1.params.pingbar.x-demo1.params.pingbar.width>=30){
+                    		  demo1.params.pingbar.x+=30;
+                    	  }
+                    	  if(stage.getX()+stage.getWidth()-demo1.params.pingbar.x-demo1.params.pingbar.width<30&&
+                    			  stage.getX()+stage.getWidth()-demo1.params.pingbar.x-demo1.params.pingbar.width>0)
+                    	  {
+                    		  demo1.params.pingbar.x=stage.getX()+stage.getWidth()-demo1.params.pingbar.width; 
+                    	  }
+                    	   	 
+                      }
+                      return false;
+    			});
+            })(),
+            pingbar:{
+            	x:stage.getX()+stage.getWidth()/2,
+            	y:stage.getHeight()-40,
+            	height:30,
+            	width:120
+            }
+		},randball);
+		  
+	    function linewithball (){
+	    	  var cachectx=this.params.cachectx;
+    	      cachectx.save();
+		      cachectx.beginPath();
+		      cachectx.strokeStyle="black";
+		      cachectx.lineWidth=1;
+		      cachectx.arc(this.params.cx,this.params.cy,this.params.r,0,2*Math.PI);
+		      cachectx.closePath();
+		      cachectx.stroke();
+		      cachectx.restore();
+		      cxt.drawImage(this.params.cacheCanvas,
+		    		  0,0,2*this.params.r,2*this.params.r,
+		    		  stage.getX()+stage.getWidth()/2-this.params.r,
+		    		  stage.getY()+stage.getHeight()/2-this.params.r,
+		    		  2*this.params.r,
+		    		  2*this.params.r);	
+	    }  
+        var demo2=new Demo((function (){
+             var cacheCanvas=document.createElement("canvas");   
+  	         var cachectx=cacheCanvas.getContext('2d');
+  	         cacheCanvas.width=100;
+  	         cacheCanvas.height=100;
+  	         var cx=50,
+  	             cy=50,
+  	             r=50;
+  	         return {
+  	        	 cachectx:cachectx,
+  	        	 cacheCanvas:cacheCanvas,
+  	        	 cx:cx,
+  	        	 cy:cy,
+  	        	 r:r
+  	         }
+        })()    
+        ,linewithball)
+		//画舞台
+		function drawStage() {
+			//调用play方法运行demo。
+			demo2.play();		
+			drawStrokeRect({
+				x : stage.getX(),
+				y : stage.getY(),
+				width : stage.getWidth(),
+				height : stage.getHeight()
+			});	
+		}
+		//初始化主舞台
+		function world() {
+			invalite();
+			drawStage();
+		}
+		//开始
+		function start() {
+			mainThread = setInterval(function() {
+				world();
+			}, 1000 / frame);
+		}
+		//暂停
+		function pause() {
+			clearInterval(mainThread);
+		}
+		$(function() {
+			//画布全屏
+			fillScreen($("#myCanvas"));
+			start();
+		});
+	</script>
+</body>
+</html>

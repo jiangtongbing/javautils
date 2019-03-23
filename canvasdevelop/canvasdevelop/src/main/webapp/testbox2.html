@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<style type="text/css">
+    #penal {
+        width: 800px;
+        height: 800px;
+        background-color: #ccc;
+    }
+</style>
+</head>
+<body>
+ <!--可选操作-->
+    <div id="select">
+        <button id="pen">铅笔</button>
+        <button id="line">直线</button>
+        <button id="rect">矩形</button>
+        <button id="arc">圆形</button>
+        <button id="robber">橡皮檫</button>
+        <button id="img">图片</button>
+        <button id="save">保存</button>
+        <input type="file" id="file" name="img" style="display: none"/>
+        <input type="color" id="color"/>
+        <input type="number" id="lineWidth"/>
+    </div>
+
+    <!--画板-->
+    <canvas id="penal" width="800" height="800"></canvas>
+</body>
+<script type="text/javascript">
+var Draw = function(){
+    this.type = 'pen';  //选项类型，默认为铅笔
+    this.penal = document.getElementById('penal');
+    this.pen = this.penal.getContext('2d');
+    this.isDraw = false;    //绘画开关
+    this.color = document.getElementById('color');
+    this.lineWidth = document.getElementById('lineWidth');
+    this.select = document.getElementById('select');    //选择面板
+    this.img = new Image();//用于动态绘制直线，矩形，圆形
+};
+Draw.prototype.init = function(){
+    var self = this;
+    var originX = null;
+    var originY = null;
+    this.select.addEventListener('click',function(event){
+        if(event.target.id == 'pen'){
+            self.type = 'pen';
+        }else if(event.target.id == 'line'){
+            self.type = 'line';
+        }else if(event.target.id == 'rect'){
+            self.type = 'rect';
+        }else if(event.target.id == 'arc'){
+            self.type = 'arc';
+        }else if(event.target.id == 'robber'){
+            self.type = 'robber';
+        }else if(event.target.id == 'img'){
+            document.getElementById('file').click();    //默认触发选择文件操作
+            document.getElementById('file').onchange = function(e){
+                var reader = new FileReader();          //这是H5新增加的读取文件函数
+                reader.readAsDataURL(e.target.files[0]);
+                reader.onload = function(ent){          //文件读取完毕后触发操作
+                    var img = new Image();
+                    img.src = ent.target.result;        //读取的结果默认存放在result上
+                    self.pen.drawImage(img,0,0);        //把图片直接画在画布上
+                }
+            }
+        }
+        else if(event.target.id == 'save'){
+            var a = document.createElement('a');
+            a.href = self.penal.toDataURL('image/png');     //把画布转化为base64
+            a.download = 'image.jpeg';
+            a.id = 'download';
+            a.innerHTML = 'download';
+            document.body.appendChild(a);
+            document.getElementById('download').style.display = 'none';
+            document.getElementById('download').click();    //默认出发下载操作
+
+        }
+    },false);
+    this.penal.addEventListener('mousedown',function(event){
+        self.isDraw = true;
+        //增加一句代码
+        self.img.src = self.penal.toDataURL('image/png');
+        originX = event.clientX - self.penal.offsetLeft;    //原点x坐标
+        originY = event.clientY - self.penal.offsetTop;     //原点y坐标
+        self.pen.moveTo(originX, originY);
+        self.pen.strokeStyle = self.color.value;
+        self.pen.lineWidth = self.lineWidth.value;
+        self.pen.beginPath();
+
+    },false);
+    this.penal.addEventListener('mouseleave', function () {
+        if(self.isDraw){
+        	self.pen.clearRect(0,0,800,800);
+            self.isDraw = false;
+        }
+    },false);
+    this.penal.addEventListener('mouseup', function (event) {
+        if(self.isDraw){
+        	self.pen.clearRect(0,0,800,800);
+            self.isDraw = false;
+        }
+    },false);
+    this.penal.addEventListener('mousemove',function(event){
+        //只有可绘画时才可画
+        if(self.isDraw){
+            var x = event.clientX - self.penal.offsetLeft;  //移动过程中的x坐标
+            var y = event.clientY - self.penal.offsetTop;   //移动过程中的y坐标
+
+            if(self.type == 'pen'){
+                self.pen.lineTo(x,y);
+                self.pen.stroke();	
+            }
+            if(self.type == 'robber'){
+                self.pen.strokeStyle = '#ccc';
+                self.pen.clearRect(x-10,y-10,20,20);
+           }
+            var newOriginX  = originX,newOriginY = originY;
+
+            if(self.type == 'line'){
+            	   self.pen.clearRect(0,0,800,800);//增加代码
+                   self.pen.drawImage(self.img, 0, 0);//增加代码
+                   self.pen.beginPath();//增加代码
+                self.pen.moveTo(originX,originY);
+                self.pen.lineTo(x,y);
+                self.pen.stroke();
+                   self.pen.closePath();//增加代码
+            }else if(self.type == 'rect'){
+            	 self.pen.clearRect(0,0,800,800);//增加代码
+                 self.pen.drawImage(self.img, 0, 0);//增加代码
+                 self.pen.beginPath();//增加代码
+            	
+                if(x < originX){
+                    newOriginX = x;
+                }
+                if(y < originY){
+                    newOriginY = y;
+                }
+                self.pen.rect(newOriginX,newOriginY,Math.abs(x-originX),Math.abs(y-originY));
+                self.pen.stroke();
+                
+                self.pen.closePath();//增加代码
+            }else if(self.type == 'arc'){
+            	
+            	 self.pen.clearRect(0,0,800,800);//增加代码
+                 self.pen.drawImage(self.img, 0, 0);//增加代码
+                 self.pen.beginPath();//增加代码
+            	
+                if(x < originX){
+                    newOriginX = x;
+                }
+                if(y < originY){
+                    newOriginY = y;
+                }
+                var r = Math.sqrt(Math.abs(x-originX) * Math.abs(x-originX) + Math.abs(y-originY) * Math.abs(y-originY))
+                self.pen.arc(Math.abs(x-originX)+newOriginX, Math.abs(y-originY)+newOriginY , r, 0, 2*Math.PI);
+                self.pen.fillStyle = self.color.value;
+                self.pen.fill();
+                  self.pen.closePath();//增加代码
+            } 
+        }
+    },false);
+}
+
+  window.onload=function (){
+	  var draw=new Draw();
+	  draw.init();
+  };
+</script>
+</html>

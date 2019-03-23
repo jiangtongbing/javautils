@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>光标实现</title>
+
+</head>
+<body>
+<canvas id="canvas" width="1000" height="500" style="border:1px solid #ccc">
+</canvas>
+
+<script type="text/javascript">
+
+var TextCursor=function (width,fillstyle){
+	   this.fillstyle=fillstyle||'rgba(0,0,0,0.5)';
+	   this.width=width||2;
+	   this.left=0;
+	   this.top=0;
+}
+TextCursor.prototype={
+		 getHeight:function (ctx){
+			 var h=ctx.measureText('W').width;
+			 return h + h/6;
+		 },
+		 createPath:function (ctx){
+			 ctx.beginPath();
+			 ctx.rect(this.left,this.top,this.width,this.getHeight(ctx));
+		 },
+		 draw:function(ctx,left,bottom){
+			 ctx.save();
+			 this.left=left;
+			 this.top=bottom-this.getHeight(ctx);
+			 this.createPath(ctx);
+			 ctx.fillStyle=this.fillstyle;
+			 ctx.fill();
+			 ctx.restore();
+		 },
+		 erase:function (ctx,imageData){
+			 ctx.putImageData(imageData,0,0,this.left,this.top,this.width,this.getHeight(ctx));
+		 }
+};
+
+
+
+    var TextLine=function (x,y){
+    	this.text='';
+    	this.left=x;
+    	this.bottom=y;
+    	this.caret=0;
+    };
+    TextLine.prototype={
+        insert:function (text){
+          this.text=this.text.substr(0,this.caret)+text+this.text.substr(this.caret);
+          this.caret+=text.length;
+        },
+        removeCharacterBeforeCaret:function (){
+             if(this.caret===0) return;
+             this.text=this.text.substring(0,this.caret-1)+
+                 this.text.substring(this.caret);
+             this.caret--;
+        },
+        getWidth:function (ctx){
+        	var h= ctx.measureText("W").width;
+        	return h+h/6;
+        },
+        draw:function (ctx){
+            ctx.save();
+            ctx.textAlign="start";
+            ctx.textBaseline="bottom";
+            ctx.strokeText(this.text,this.left,this.bottom);
+            ctx.fillText(this.text,this.left,this.bottom);
+            ctx.restore();
+        },
+        erase:function (ctx,imageData){
+        	ctx.putImageData(imageData,0,0);
+        }
+    };
+    //variables;
+    var canvas=document.getElementById("canvas"),
+    ctx=canvas.getContext("2d"),
+    grid_stroke_style="lightgray",
+    grid_horizontal_spacing=10,
+    grid_vertical_spacing=10,
+    cursor=new TextCursor(),
+    line,
+    blinkingInterval,
+    blink_time=1000,
+    blink_off=300,
+    drawingSurfaceImageData;
+    //functions
+      //坐标转换。
+   function windowToCanvas(x,y){
+	   var bbox=canvas.getBoundingClientRect();
+	   return {
+		   x:x-bbox.left*(canvas.width/bbox.width),
+	       y:y-bbox.top*(canvas.height/bbox.height)
+	   };
+   }	
+   //保存之前绘画的内容
+   function saveDrawingSurface(){
+	   drawingSurfaceImageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+   } 
+   //
+   function setFont(){
+	   ctx.font='20px 黑体';
+	   
+   }
+   function blinkCursor(x,y){
+	   clearInterval(blinkingInterval);
+	   blinkingInterval=setInterval(function (e){
+		   cursor.erase(ctx,drawingSurfaceImageData);
+		   setTimeout(function (e){
+			   if(cursor.left==x&&cursor.top+cursor.getHeight(ctx)==y){
+				   cursor.draw(ctx,x,y);
+			   }   
+		   },300)
+	   },1000);
+   }
+   function moveCursor(x,y){
+	   cursor.erase(ctx,drawingSurfaceImageData);
+	   saveDrawingSurface();
+	   ctx.putImageData(drawingSurfaceImageData,0,0);
+	   cursor.draw(ctx,x,y);
+	   blinkCursor(x,y);
+   } 
+   //eventHanlder;
+   canvas.onmousedown=function (e){
+	    var loc=windowToCanvas(e.clientX,e.clientY),
+	    fontHeight=ctx.measureText("W").width;
+	    fontHeight+=fontHeight/6;
+	    line=new TextLine(loc.x,loc.y);
+	    moveCursor(loc.x,loc.y);
+   }
+   //key event handler
+   document.onkeydown=function (e){
+	   if(e.keyCode===8||e.keyCode===13){
+		   e.preventDefault();
+	   }
+	   // 8=backspace
+	   if(e.keyCode===8){
+		   ctx.save();
+		   line.erase(ctx,drawingSurfaceImageData);
+		   line.removeCharacterBeforeCaret();
+		   moveCursor(line.left+line.getWidth(ctx),line.bottom);
+		   line.draw(ctx);
+		   ctx.restore();
+	   }
+   }
+   document.onkeypress=function (e){
+	   var key=String.fromCharCode(e.which);
+	   if(e.keyCode!==8&&!e.ctrlKey&&!e.metaKey){
+		   e.preventDefault();
+		   ctx.save();
+		   line.erase(ctx,drawingSurfaceImageData);
+		   line.insert(key);
+		   moveCursor(line.left+line.getWidth(ctx),line.bottom);
+		   ctx.shadowColor='rgba(0,0,0,0.5)';
+		   ctx.shadowOffsetX=1;
+		   ctx.shadowOffsetY=1;
+		   ctx.shadowBlur=2;
+		   line.draw(ctx);
+		   ctx.restore();
+	   }
+   }
+   //initilization
+   cursor.fillStyle="rgba(0,0,0,0.8)";
+   cursor.strokeStyle="#ccc";
+   ctx.fillStyle="rgba(0,0,0,0.8)";
+   ctx.strokeStyle="#ccc";
+   ctx.lineWidth=2.0;
+   setFont();
+   saveDrawingSurface();
+   
+</script>
+</body>
+</html>

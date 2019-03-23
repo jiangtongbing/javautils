@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>文本的填充与描边3</title>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="text/javascript">
+function getId(id) {
+	return document.getElementById(id);
+}
+//variables
+var ctx=getId("canvas").getContext("2d"),
+left_column_fonts=['2em palatino','bolder 2em palatino','lighter 2em palatino',
+	'italic 2em palatino','oblique small-caps 24px palatino','bold 14pt palatino',
+	'xx-large palatino','italic xx-large palatino'],
+right_column_fonts=['oblique 1.5em lucida console','x-large fantasy','italic 28px monaco',
+	'italic large copperplate','36px century','28px tahoma','28px impact','1.7em verdana'],	
+left_column_x=25,
+right_column_x=425,
+delta_y=50,
+top_y=50,
+y=0;
+
+ctx.fillStyle='blue';
+left_column_fonts.forEach(function (font){
+	 ctx.font=font;
+	 ctx.fillText(font,left_column_x,y+=delta_y);
+});
+y=0;
+right_column_fonts.forEach(function (font){
+	ctx.font=font;
+	ctx.fillText(font,right_column_x,y+=delta_y);
+});
+</script>
+</body>
+</html>

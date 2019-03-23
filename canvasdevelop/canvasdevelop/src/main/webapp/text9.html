@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>实现简单的文本编辑器</title>
+<style type="text/css">
+canvas{
+  border:1px solid #ccc;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600">
+  	canvas not supported
+</canvas>
+<script type="text/javascript">
+  var TextCursor=function (width,fillstyle){
+	   this.fillstyle=fillstyle||'rgba(0,0,0,0.5)';
+	   this.width=width||2;
+	   this.left=0;
+	   this.top=0;
+  }
+  TextCursor.prototype={
+		 getHeight:function (ctx){
+			 var h=ctx.measureText('W').width;
+			 return h + h/6;
+		 },
+		 createPath:function (ctx){
+			 ctx.beginPath();
+			 ctx.rect(this.left,this.top,this.width,this.getHeight(ctx));
+		 },
+		 draw:function(ctx,left,bottom){
+			 ctx.save();
+			 this.left=left;
+			 this.top=bottom-this.getHeight(ctx);
+			 this.createPath(ctx);
+			 ctx.fillStyle=this.fillstyle;
+			 ctx.fill();
+			 ctx.restore();
+		 },
+		 erase:function (ctx,imageData){
+			 ctx.putImageData(imageData,0,0,this.left,this.top,this.width,this.getHeight(ctx));
+		 }
+  };
+    function getId(id) {
+		return document.getElementById(id);
+	}
+	//variables
+	var ctx=getId("canvas").getContext("2d"),
+	drawingSurfaceImageData,
+	blinkingInterval,
+	blink_on=500,
+	blink_off=500,
+	cursor=new TextCursor();
+	
+	//functions 
+	  //保存之前绘画的内容
+   function blinkCursor(loc){
+	    blinkingInterval=setInterval(function (e){
+	    	 cursor.erase(ctx,drawingSurfaceImageData);
+	    	 setTimeout(function (e){
+	    		 cursor.draw(ctx,cursor.left,cursor.top+cursor.getHeight(ctx));
+	    	 },blink_off);
+	    },blink_on+blink_off);	
+   }  
+	  
+   function saveDrawingSurface(){
+	   drawingSurfaceImageData=ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
+   }
+	function windowToCanvas(x,y){
+		   var bbox=ctx.canvas.getBoundingClientRect();
+		   var point={
+				   x:x-bbox.left*(ctx.canvas.width/bbox.width),
+			       y:y-bbox.top*(ctx.canvas.height/bbox.height)
+			   };
+		   console.log("p.x:"+point.x+",p.y:"+point.y);
+		   return point;
+	}
+	function  moveCursor(loc){
+		cursor.erase(ctx,drawingSurfaceImageData);
+		cursor.draw(ctx,loc.x,loc.y);
+		if(!blinkingInterval){
+			 blinkCursor(loc);
+		}
+	}
+	
+	ctx.canvas.onmousedown=function (e){
+		var loc=windowToCanvas(e.clientX,e.clientY);
+		moveCursor(loc)
+	}
+	saveDrawingSurface();
+</script>
+</body>
+</html>

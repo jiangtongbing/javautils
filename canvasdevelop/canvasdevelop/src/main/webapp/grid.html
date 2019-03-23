@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>绘制网格</title>
+<style type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+
+canvas {
+	border: 1px solid #ccc;
+	position: absolute;
+}
+
+#settings {
+	height: 200px;
+	width: 100%;
+	color: #ffffff;
+	position: absolute; left : 0;
+	top: 0;
+	left: 0;
+}
+
+.nbox {
+	width: 100%;
+	height: 100%;
+	display: none; background-color : #a28e63;
+	padding: 10px 10px 10px 10px;
+	background-color: #a28e63;
+}
+
+.step {
+	margin-top: 10px;
+}
+
+#apply {
+	cursor: pointer;
+	border-bottom: 1px solid #ffffff;
+}
+</style>
+</head>
+<body>
+	<canvas id="myCanvas" width="1000" height="600">
+           您的浏览器不支持canvas  
+    </canvas>
+	<!-- 设置面板 -->
+	<script type="text/javascript">
+	   function drawGrid(ctx,color,stepX,stepY){
+		    ctx.strokeStyle=color;
+		    ctx.lineWidth=0.5;
+		    for(var i=stepX+0.5;i<ctx.canvas.width;i+=stepX){
+		    	ctx.beginPath();
+		    	ctx.moveTo(i,0);
+		    	ctx.lineTo(i,ctx.canvas.height);
+		    	ctx.stroke();
+		    }
+		    for(var i=stepY+0.5;i<ctx.canvas.height;i+=stepY){
+		    	 ctx.beginPath();
+		    	 ctx.moveTo(0,i);
+		    	 ctx.lineTo(ctx.canvas.width,i);
+		    	 ctx.stroke();
+		    }
+		   
+	   }
+	   function invaliate(ctx){
+		  ctx.clearRect(0,0,ctx.width,ctx.height);
+	   }
+	
+	   window.onload=function (){
+		      var canvas=document.getElementById("myCanvas");
+		      var ctx=canvas.getContext('2d');
+		      drawGrid(ctx,'red',10,10);
+	   }      
+	</script>
+</body>
+</html>

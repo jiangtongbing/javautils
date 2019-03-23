@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>图像滤镜</title>
+</head>
+<body>
+<!-- 负片滤镜和黑白滤镜 -->
+<div>
+   <button id="negativeButton">负片滤镜</button> &nbsp;&nbsp;
+      <label for="blackwhitecheckbox">黑白滤镜</label><input type="checkbox" id="blackwhitecheckbox">
+</div>
+<canvas style="border:1px solid #ccc" id="canvas" width="1000" height="500">
+</canvas>
+</body>
+<script type="text/javascript">
+   var image=new Image(),
+   canvas=document.getElementById("canvas"),
+   ctx=canvas.getContext("2d"),
+   negativeButton=document.getElementById("negativeButton"),
+   blackwhitecheckbox=document.getElementById("blackwhitecheckbox");
+   negativeButton.onclick=function (){
+	   var imageData=ctx.getImageData(0,0,canvas.width,canvas.height),
+	   data=imageData.data;
+	   for(var i=0;i<data.length-4;i+=4){
+		   data[i]=255-data[i];
+		   data[i+1]=255-data[i+1];
+		   data[i+2]=255-data[i+2];
+	   }
+	   ctx.putImageData(imageData,0,0);
+   };
+   function drawInBlackAndWhite(){
+	   var data=undefined,i=0,
+	   imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+	   data=imageData.data;
+	   for(i=0;i<data.length-4;i+=4){
+		   average=(data[i]+data[i+1]+data[i+2])/3;
+		   data[i]=average;
+		   data[i+1]=average;
+		   data[i+2]=average;
+	   }
+	   ctx.putImageData(imageData,0,0);
+   }
+   function drawInColor(){
+	   ctx.drawImage(image,0,0,image.width,image.height,0,0,ctx.canvas.width,
+			   ctx.canvas.height);
+   }
+   blackwhitecheckbox.onclick=function (){
+	   if(blackwhitecheckbox.checked){
+		    drawInColor();
+	   }else{
+		   drawInBlackAndWhite();
+	   }
+   }
+   
+   image.src='image/3.jpg';
+   image.onload=function (){
+	   ctx.drawImage(image,0,0,image.width,image.height,0,0,ctx.canvas.width,ctx.canvas.height);
+   };
+
+</script>
+</html>

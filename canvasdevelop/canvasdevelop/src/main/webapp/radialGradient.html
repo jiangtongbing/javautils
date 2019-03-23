@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>线性渐变</title>
+</head>
+<body>
+<canvas id="cas" width="1000" height="500">
+</canvas>
+<script type="text/javascript">
+  window.onload=function (){
+	   var canvas=document.getElementById('cas'),
+	    context=canvas.getContext('2d'),
+	    gradient=context.createRadialGradient(canvas.width/2,canvas.height,10,canvas.width/2,0,100);
+	    gradient.addColorStop(0,'blue');
+	    gradient.addColorStop(0.25,'white');
+	    gradient.addColorStop(0.5,'purple');
+	    gradient.addColorStop(0.75,'red');
+	    gradient.addColorStop(1,'yellow');
+	    context.fillstyle=gradient;
+	    context.rect(0,0,canvas.width,canvas.height);
+	    context.fill();
+	   
+  }
+</script>
+</body>
+</html>

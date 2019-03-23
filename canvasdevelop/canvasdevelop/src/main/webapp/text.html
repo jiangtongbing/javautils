@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>文本的填充与描边</title>
+</head>
+<body>
+ <input type="checkbox" id="fillcheckbox" checked>fillcheckbox&nbsp;
+ <input type="checkbox" id="strokecheckbox">strokecheckbox&nbsp;
+ <input type="checkbox" id="shadowcheckbox">shadowcheckbox&nbsp;
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="text/javascript">
+function getId(id) {
+	return document.getElementById(id);
+}
+//variables
+var ctx=getId("canvas").getContext("2d"),
+fillcheckbox=getId("fillcheckbox"),
+strokecheckbox=getId("strokecheckbox"),
+shadowcheckbox=getId("shadowcheckbox"),
+text="HTML5";
+//functions
+function draw(){
+	ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	drawBackground();
+	if(shadowcheckbox.checked) turnShadowsOn();
+	else   turnShadowsOff();
+	drawText();
+}
+function drawBackground(){
+	var stepy=12,top_margin=stepy*4,left_margin=stepy*3,i=ctx.canvas.height;
+	ctx.strokeStyle="lightgray";
+	ctx.lineWidth=0.5;
+	while(i>top_margin){
+		ctx.beginPath();
+		ctx.moveTo(0,i);
+		ctx.lineTo(ctx.canvas.width,i);
+		ctx.stroke();
+		i-=stepy;
+	}
+	ctx.strokeStyle='rgba(100,0,0,0.3)';
+	ctx.lineWidth=1;
+	ctx.beginPath();
+	ctx.moveTo(left_margin,0);
+	ctx.lineTo(left_margin,ctx.canvas.height);
+	ctx.stroke();
+}
+function turnShadowsOn(){
+	ctx.shadowColor="rgba(0,0,0,0.8)";
+	ctx.shadowOffsetX=5;
+	ctx.shadowOffsetY=5;
+	ctx.shadowOffsetBlur=10;
+}
+function turnShadowsOff(){
+	ctx.shadowColor=undefined;
+	ctx.shadowOffsetX=0;
+	ctx.shadowOffsetY=0;
+	ctx.shadowOffsetBlur=0;
+}
+function drawText(){
+	var textx=65,texty=ctx.canvas.height/2+35;
+	ctx.strokeStyle="blue";
+	if(fillcheckbox.checked) ctx.fillText(text,textx,texty);
+	if(strokecheckbox.checked) ctx.strokeText(text,textx,texty);
+}
+//event handlers
+fillcheckbox.onchange=draw,strokecheckbox.onchange=draw,shadowcheckbox.onchange=draw;
+
+//initialzation
+ctx.font="128px Palatino";
+ctx.lineWidth=1.0;
+ctx.fillStyle="cornflowerblue";
+
+turnShadowsOn();
+draw();
+
+
+</script>
+</body>
+</html>

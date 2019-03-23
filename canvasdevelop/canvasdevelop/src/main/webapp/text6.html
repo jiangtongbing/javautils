@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>绘制圆周围的字</title>
+<style type="text/css">
+canvas{
+  border:1px solid #ccc;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="text/javascript">
+function getId(id) {
+	return document.getElementById(id);
+}
+//variables
+var ctx=getId("canvas").getContext("2d"),
+degree_annotations_fill_style="rgba(0,0,230,0.9)",
+degree_annotations_text_size=12,
+circle={
+   	 x:ctx.canvas.width/2,y:ctx.canvas.height/2,radius:150
+    },
+ degree_dial_margin=10,  tick_width=10;  
+ 
+//functions 
+function drawDegreeAnnotations(){
+	
+	
+	var radius=circle.radius+degree_dial_margin;
+	ctx.save();
+	ctx.fillStyle=degree_annotations_fill_style;
+	ctx.font=degree_annotations_text_size+"px Helvetica";
+	for(var angle=0;angle<2*Math.PI;angle+=Math.PI/8){
+		
+		ctx.beginPath();
+		//画线 newX=circle.x+cos(degree)*r; newY=circle.y-sin(degree)*r
+		  
+		var newX=circle.x+Math.cos(angle)*(radius-tick_width*2);
+		var newY=circle.y-Math.sin(angle)*(radius-tick_width*2);
+		ctx.fillText((angle*180/Math.PI).toFixed(0),newX,newY);
+		ctx.moveTo(circle.x,circle.y);
+		ctx.lineTo(newX,newY);
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+function drawCircle(){
+	ctx.beginPath();
+	ctx.arc(circle.x,circle.y,circle.radius,0,Math.PI*2,false);
+	ctx.stroke();
+}
+
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+drawDegreeAnnotations();
+drawCircle();
+
+</script>
+</body>
+</html>

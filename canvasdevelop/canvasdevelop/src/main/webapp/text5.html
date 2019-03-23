@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>绘制坐标轴</title>
+<style type="text/css">
+canvas{
+  border:1px solid #ccc;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="text/javascript">
+function getId(id) {
+	return document.getElementById(id);
+}
+//variables
+var ctx=getId("canvas").getContext("2d"),
+horizontal_axis_margin=50,
+vertical_axis_margin=50,
+axis_origin={
+	x:horizontal_axis_margin,
+	y:canvas.height-vertical_axis_margin
+},
+axis_top=vertical_axis_margin,
+axis_right=ctx.canvas.width-horizontal_axis_margin,
+horizontal_tick_spacing=10,
+vertical_tick_spacing=10,
+axis_width=axis_right-axis_origin.x,
+axis_height=axis_origin.y-axis_top,
+num_vertical_ticks=axis_height/vertical_tick_spacing,
+num_horizontal_ticks=axis_width/horizontal_tick_spacing,
+tick_width=10,
+space_between_labels_and_axis=20;
+
+//functions 
+function drawAxes(){
+	ctx.save();
+	ctx.lineWidth=1.0;
+	ctx.fillStyle='rgba(100,140,230,0.8)';
+	ctx.strokeStyle="navy";
+	drawHorizontalAxis();
+	drawVerticalAxis();
+	ctx.lineWidth=0.5;
+	ctx.strokeStyle="navy";
+	ctx.strokeStyle="darkred";
+	drawVerticalAxisTicks();
+	drawHorizontalAxisTicks();
+	ctx.restore();
+}
+function drawHorizontalAxis(){
+	ctx.beginPath();
+	ctx.moveTo(axis_origin.x,axis_origin.y);
+	ctx.lineTo(axis_right,axis_origin.y);
+	ctx.stroke();
+}
+function drawVerticalAxis(){
+	ctx.beginPath();
+	ctx.moveTo(axis_origin.x,axis_origin.y);
+	ctx.lineTo(axis_origin.x,axis_top);
+	ctx.stroke();
+}
+
+function drawAxisLabels(){
+	ctx.fillStyle="blue";
+	drawHorizontalAxisLabels();
+	drawVerticalAixsLabels();
+}
+function drawHorizontalAxisLabels(){
+	 ctx.textAlign="center";
+	 ctx.textBaseline="top";
+	 for(var i=0;i<num_horizontal_ticks;++i){
+		 if(i%5===0){
+			 ctx.fillText(i,
+					 axis_origin.x+i*horizontal_tick_spacing,
+					 axis_origin.y+space_between_labels_and_axis)
+		 }
+	 }
+}
+function drawVerticalAixsLabels(){
+	ctx.textAlign="right";
+	ctx.textBaseline="middle";
+	for(var i=0;i<num_vertical_ticks;++i){
+		 if(i%5===0){
+			 ctx.fillText(i,
+					 axis_origin.x-space_between_labels_and_axis,
+					 axis_origin.y-i*vertical_tick_spacing);
+		 }
+	 }
+}
+function drawVerticalAxisTicks(){
+	var deltaX;
+	for(var i=1;i<num_vertical_ticks;++i){
+		ctx.beginPath();
+		if(i%5===0) deltaX=tick_width;
+		else deltaX=tick_width/2;
+		ctx.moveTo(axis_origin.x-deltaX,axis_origin.y-i*vertical_tick_spacing);
+		ctx.lineTo(axis_origin.x+deltaX,axis_origin.y-i*vertical_tick_spacing);
+		ctx.stroke();
+	}
+}
+function drawHorizontalAxisTicks(){
+	 var deltaY;
+	 for(var i=0;i<num_horizontal_ticks;++i){
+		 ctx.beginPath();
+		 if(i%5===0) deltaY=tick_width;
+		 else deltaY=tick_width/2;
+		 ctx.moveTo(axis_origin.x+i*horizontal_tick_spacing,
+				 axis_origin.y-deltaY);
+		 ctx.lineTo(axis_origin.x+i*horizontal_tick_spacing,axis_origin.y+deltaY);
+		 ctx.stroke();
+	 }
+}
+function drawGrid(color,stepx,stepy){
+    //栅格。
+  //画橡皮筋辅助线。
+	 ctx.save();
+	 ctx.shadowColor=undefined;
+	 ctx.shadowOffsetX=0;
+	 ctx.shadowOffsetY=0;
+	 ctx.strokeStyle=color;
+	 ctx.fillStyle='#ffffff';
+	 ctx.lineWidth=0.5;
+	 ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	 for(var i=stepx+0.5;i<ctx.canvas.width;i+=stepx){
+		 ctx.beginPath();
+		 ctx.moveTo(i,0);
+		 ctx.lineTo(i,ctx.canvas.height);
+		 ctx.stroke();
+	 }
+	 for(var i=stepy+0.5;i<ctx.canvas.height;i+=stepy){
+		 ctx.beginPath();
+		 ctx.moveTo(0,i);
+		 ctx.lineTo(ctx.canvas.width,i);
+		 ctx.stroke();
+	 }
+	 ctx.restore();
+}
+
+//Initialization
+ctx.font="13px arial";
+drawGrid("lightgray",10,10);
+ctx.shadowColor="rgba(100,140,230,0.8)";
+ctx.shadowOffsetX=3;
+ctx.shadowOffsetY=3;
+ctx.shadowBlur=5;
+drawAxes();
+drawAxisLabels();
+
+
+</script>
+</body>
+</html>

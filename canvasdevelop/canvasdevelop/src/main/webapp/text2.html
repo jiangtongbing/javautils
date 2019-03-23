@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>文本的填充与描边2</title>
+</head>
+<body>
+<canvas id="canvas" width="1000" height="600"></canvas>
+<script type="text/javascript">
+function getId(id) {
+	return document.getElementById(id);
+}
+//variables
+var ctx=getId("canvas").getContext("2d"),
+fillcheckbox=getId("fillcheckbox"),
+image=new Image(),
+//创建渐变填充。
+gradient=ctx.createLinearGradient(0,0,ctx.canvas.width,ctx.canvas.height),
+text="HTML5",
+//创建图案填充。
+pattern;
+//functions
+
+
+
+function drawBackground(){
+	var stepy=12,top_margin=stepy*4,left_margin=stepy*3,i=ctx.canvas.height;
+	ctx.strokeStyle="lightgray";
+	ctx.lineWidth=0.5;
+	while(i>top_margin){
+		ctx.beginPath();
+		ctx.moveTo(0,i);
+		ctx.lineTo(ctx.canvas.width,i);
+		ctx.stroke();
+		i-=stepy;
+	}
+	ctx.strokeStyle='rgba(100,0,0,0.3)';
+	ctx.lineWidth=1;
+	ctx.beginPath();
+	ctx.moveTo(left_margin,0);
+	ctx.lineTo(left_margin,ctx.canvas.height);
+	ctx.stroke();
+}
+function drawGradientText(){
+	ctx.fillStyle=gradient;
+	ctx.fillText(text,65,200);
+	ctx.strokeText(text,65,200);
+}
+function drawPatternText(){
+	ctx.fillStyle=pattern;
+	ctx.fillText(text,65,450);
+	ctx.strokeText(text,65,450);
+}
+//event handlers
+image.onload=function (e){
+	pattern=ctx.createPattern(image,'repeat');
+	drawPatternText();
+}
+image.src="image/Search.png";
+
+//initialzation
+ctx.font="128px Palatino";
+ctx.strokeStyle="cornflowerblue";
+
+ctx.shadowColor="rgba(100,100,150,0.8)";
+ctx.shadowOffsetX=5;
+ctx.shadowOffsetY=5;
+ctx.shadowBlur=10;
+
+gradient.addColorStop(0,"blue");
+gradient.addColorStop(0.25,"blue");
+gradient.addColorStop(0.5,"white");
+gradient.addColorStop(0.75,"red");
+gradient.addColorStop(1.0,"yellow");
+
+drawBackground();
+drawGradientText();
+
+
+</script>
+</body>
+</html>
